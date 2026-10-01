@@ -1,807 +1,960 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Coming Soon</title>
-
-<style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-html,
-body {
-    width: 100%;
-    height: 100%;
-}
-
-body {
-    overflow: hidden;
-    background: #01030b;
-    color: #fff;
-    font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Arial,
-        sans-serif;
-}
-
-/* =====================================================
-   SPACE
-===================================================== */
-
-.space {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
-
-    background:
-        radial-gradient(
-            circle at 50% 42%,
-            rgba(35, 65, 150, .18),
-            transparent 35%
-        ),
-        radial-gradient(
-            circle at 85% 15%,
-            rgba(100, 45, 190, .12),
-            transparent 30%
-        ),
-        linear-gradient(
-            180deg,
-            #01030b 0%,
-            #020719 55%,
-            #01030b 100%
-        );
-}
-
-/* =====================================================
-   STARS
-===================================================== */
-
-.stars,
-.stars2,
-.stars3 {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-}
-
-.stars {
-    background-image:
-        radial-gradient(circle, #fff 1px, transparent 1.5px),
-        radial-gradient(circle, rgba(255,255,255,.7) 1px, transparent 1.5px);
-
-    background-size:
-        170px 170px,
-        260px 260px;
-
-    background-position:
-        10px 20px,
-        100px 80px;
-
-    opacity: .65;
-}
-
-.stars2 {
-    background-image:
-        radial-gradient(circle, #fff 1.2px, transparent 2px),
-        radial-gradient(circle, rgba(100,180,255,.8) 1px, transparent 2px);
-
-    background-size:
-        330px 330px,
-        420px 420px;
-
-    background-position:
-        40px 120px,
-        200px 50px;
-
-    opacity: .45;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>LUNARAI — Coming Soon</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            overflow: hidden;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+
+            color: #ffffff;
+            background: #02040c;
+        }
+
+        /* =========================================
+           SPACE BACKGROUND
+        ========================================= */
+
+        .space {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+
+            background:
+                radial-gradient(
+                    circle at 50% 42%,
+                    rgba(70, 90, 220, 0.16),
+                    transparent 32%
+                ),
+                radial-gradient(
+                    circle at 85% 15%,
+                    rgba(120, 70, 230, 0.12),
+                    transparent 28%
+                ),
+                linear-gradient(
+                    180deg,
+                    #01030a 0%,
+                    #030817 55%,
+                    #01030a 100%
+                );
+        }
+
+        /* =========================================
+           STARS
+        ========================================= */
+
+        .stars,
+        .stars-two,
+        .stars-three {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .stars {
+            background-image:
+                radial-gradient(
+                    circle,
+                    rgba(255,255,255,0.95) 1px,
+                    transparent 1.5px
+                ),
+                radial-gradient(
+                    circle,
+                    rgba(255,255,255,0.6) 1px,
+                    transparent 1.5px
+                );
+
+            background-size:
+                150px 150px,
+                260px 260px;
+
+            background-position:
+                20px 30px,
+                100px 80px;
+
+            opacity: 0.65;
+        }
+
+        .stars-two {
+            background-image:
+                radial-gradient(
+                    circle,
+                    rgba(130,190,255,0.9) 1px,
+                    transparent 2px
+                );
+
+            background-size: 340px 340px;
+            background-position: 60px 120px;
+
+            opacity: 0.4;
+        }
+
+        .stars-three {
+            background-image:
+                radial-gradient(
+                    circle,
+                    #ffffff 1.5px,
+                    transparent 2px
+                );
+
+            background-size: 520px 520px;
+            background-position: 150px 80px;
+
+            opacity: 0.3;
+        }
+
+        /* =========================================
+           NEBULA
+        ========================================= */
+
+        .nebula {
+            position: absolute;
+
+            width: 900px;
+            height: 600px;
+
+            left: 50%;
+            top: 8%;
+
+            transform: translateX(-50%);
+
+            background:
+                radial-gradient(
+                    ellipse,
+                    rgba(70,100,255,0.13),
+                    rgba(130,60,230,0.06) 40%,
+                    transparent 72%
+                );
+
+            filter: blur(45px);
+
+            animation:
+                nebulaMove 12s ease-in-out infinite alternate;
+        }
 
-.stars3 {
-    background-image:
-        radial-gradient(circle, white 1.5px, transparent 2px);
+        @keyframes nebulaMove {
+            from {
+                transform:
+                    translateX(-50%)
+                    scale(1);
+            }
+
+            to {
+                transform:
+                    translateX(-50%)
+                    scale(1.12);
+            }
+        }
+
+        /* =========================================
+           MOON
+        ========================================= */
+
+        .moon {
+            position: absolute;
+
+            width: 125px;
+            height: 125px;
+
+            top: 10%;
+            right: 11%;
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(
+                    circle at 35% 30%,
+                    #ffffff 0%,
+                    #d9e2f2 22%,
+                    #8998b0 52%,
+                    #3a465b 78%,
+                    #121827 100%
+                );
 
-    background-size: 520px 520px;
-    background-position: 80px 200px;
+            box-shadow:
+                inset -18px -15px 25px rgba(0,0,0,0.45),
+                0 0 30px rgba(170,200,255,0.25),
+                0 0 90px rgba(100,140,255,0.12);
 
-    opacity: .3;
-}
+            animation:
+                moonFloat 7s ease-in-out infinite;
+        }
 
-/* =====================================================
-   NEBULA
-===================================================== */
+        .moon::before,
+        .moon::after {
+            content: "";
+            position: absolute;
 
-.nebula {
-    position: absolute;
+            border-radius: 50%;
 
-    width: 900px;
-    height: 600px;
-
-    left: 50%;
-    top: 10%;
-
-    transform: translateX(-50%);
+            background: rgba(30,40,60,0.18);
+        }
 
-    background:
-        radial-gradient(
-            ellipse,
-            rgba(70, 100, 255, .14),
-            rgba(130, 50, 220, .06) 35%,
-            transparent 70%
-        );
+        .moon::before {
+            width: 18px;
+            height: 18px;
 
-    filter: blur(45px);
+            left: 27px;
+            top: 36px;
+        }
+
+        .moon::after {
+            width: 12px;
+            height: 12px;
 
-    animation: nebulaMove 12s ease-in-out infinite alternate;
-}
+            right: 30px;
+            bottom: 28px;
+        }
 
-@keyframes nebulaMove {
-    from {
-        transform: translateX(-50%) scale(1);
-    }
+        @keyframes moonFloat {
+            0%, 100% {
+                transform: translateY(0);
+            }
 
-    to {
-        transform: translateX(-50%) scale(1.12);
-    }
-}
+            50% {
+                transform: translateY(10px);
+            }
+        }
 
-/* =====================================================
-   SUN
-===================================================== */
+        /* =========================================
+           SMALL PLANET
+        ========================================= */
 
-.sun {
-    position: absolute;
+        .planet {
+            position: absolute;
 
-    width: 125px;
-    height: 125px;
+            width: 78px;
+            height: 78px;
 
-    top: 10%;
-    right: 12%;
+            left: 9%;
+            top: 20%;
 
-    border-radius: 50%;
+            border-radius: 50%;
 
-    background:
-        radial-gradient(
-            circle at 35% 35%,
-            #fff,
-            #ffe77a 20%,
-            #ffb52e 55%,
-            #ff641f 75%,
-            transparent 76%
-        );
+            background:
+                radial-gradient(
+                    circle at 30% 28%,
+                    #b8d6ff,
+                    #526fc1 38%,
+                    #1b275d 70%,
+                    #060a1e
+                );
 
-    box-shadow:
-        0 0 30px #ffbd45,
-        0 0 80px rgba(255,170,40,.55),
-        0 0 160px rgba(255,110,30,.25);
+            box-shadow:
+                inset -15px -12px 25px rgba(0,0,0,0.55),
+                0 0 30px rgba(80,130,255,0.2);
+        }
 
-    animation: sunPulse 5s ease-in-out infinite;
-}
+        .planet::after {
+            content: "";
 
-@keyframes sunPulse {
-    0%, 100% {
-        transform: scale(1);
-    }
+            position: absolute;
 
-    50% {
-        transform: scale(1.06);
-    }
-}
+            width: 125px;
+            height: 30px;
 
-/* =====================================================
-   PLANET
-===================================================== */
+            left: -24px;
+            top: 25px;
 
-.planet-small {
-    position: absolute;
+            border:
+                1px solid
+                rgba(150,190,255,0.4);
 
-    width: 95px;
-    height: 95px;
+            border-radius: 50%;
 
-    left: 9%;
-    top: 17%;
+            transform: rotate(-18deg);
+        }
 
-    border-radius: 50%;
+        /* =========================================
+           SATELLITE
+        ========================================= */
 
-    background:
-        radial-gradient(
-            circle at 30% 30%,
-            #c3d8ff,
-            #5272c9 35%,
-            #18275d 70%,
-            #050a20
-        );
+        .satellite {
+            position: absolute;
 
-    box-shadow:
-        inset -20px -15px 30px rgba(0,0,0,.6),
-        0 0 30px rgba(80,120,255,.25);
-}
+            width: 115px;
+            height: 75px;
 
-.planet-small::after {
-    content: "";
+            right: 17%;
+            top: 34%;
 
-    position: absolute;
+            transform: rotate(-10deg);
 
-    width: 150px;
-    height: 38px;
+            animation:
+                satelliteFloat 9s ease-in-out infinite;
+        }
 
-    left: -28px;
-    top: 30px;
+        @keyframes satelliteFloat {
+            0%, 100% {
+                transform:
+                    translate(0,0)
+                    rotate(-10deg);
+            }
 
-    border: 2px solid rgba(150,180,255,.35);
+            50% {
+                transform:
+                    translate(-35px,18px)
+                    rotate(-4deg);
+            }
+        }
 
-    border-radius: 50%;
+        .satellite-body {
+            position: absolute;
 
-    transform: rotate(-18deg);
-}
+            width: 42px;
+            height: 32px;
 
-/* =====================================================
-   SATELLITE
-===================================================== */
+            left: 37px;
+            top: 20px;
 
-.satellite {
-    position: absolute;
+            border-radius: 4px;
 
-    width: 100px;
-    height: 70px;
+            background:
+                linear-gradient(
+                    135deg,
+                    #edf2fa,
+                    #64728a
+                );
 
-    right: 17%;
-    top: 34%;
+            box-shadow:
+                0 0 10px rgba(150,200,255,0.2);
+        }
 
-    transform: rotate(-12deg);
+        .satellite-body::before {
+            content: "";
 
-    animation: satelliteFloat 8s ease-in-out infinite;
-}
+            position: absolute;
 
-@keyframes satelliteFloat {
-    0%, 100% {
-        transform: translate(0,0) rotate(-12deg);
-    }
+            width: 23px;
+            height: 23px;
 
-    50% {
-        transform: translate(-35px,18px) rotate(-5deg);
-    }
-}
+            right: -16px;
+            top: 4px;
 
-.satellite-body {
-    position: absolute;
+            border:
+                2px solid
+                #d5deed;
 
-    width: 42px;
-    height: 32px;
+            border-radius: 50%;
+        }
 
-    left: 29px;
-    top: 18px;
+        .satellite-body::after {
+            content: "";
 
-    background:
-        linear-gradient(
-            135deg,
-            #e5ebf5,
-            #68758b
-        );
+            position: absolute;
 
-    border-radius: 4px;
-}
+            width: 23px;
+            height: 2px;
 
-.satellite-body::before {
-    content: "";
+            right: -30px;
+            top: 15px;
 
-    position: absolute;
+            background: #d5deed;
 
-    width: 24px;
-    height: 24px;
+            transform: rotate(-15deg);
+        }
 
-    right: -15px;
-    top: 4px;
+        .solar-panel {
+            position: absolute;
 
-    border: 2px solid #cfd9e8;
+            width: 30px;
+            height: 43px;
 
-    border-radius: 50%;
-}
+            top: 15px;
 
-.satellite-body::after {
-    content: "";
+            background:
+                repeating-linear-gradient(
+                    90deg,
+                    #142b65 0px,
+                    #142b65 5px,
+                    #6387d5 6px,
+                    #142b65 7px
+                );
 
-    position: absolute;
+            border:
+                1px solid
+                #809bd8;
+        }
 
-    width: 20px;
-    height: 2px;
+        .solar-panel.left {
+            left: 2px;
+        }
 
-    right: -27px;
-    top: 15px;
+        .solar-panel.right {
+            right: 2px;
+        }
 
-    background: #cfd9e8;
+        /* =========================================
+           ORBIT
+        ========================================= */
 
-    transform: rotate(-15deg);
-}
+        .orbit {
+            position: absolute;
 
-.panel {
-    position: absolute;
+            width: 550px;
+            height: 175px;
 
-    width: 27px;
-    height: 42px;
+            left: 50%;
+            top: 50%;
 
-    top: 13px;
+            transform:
+                translate(-50%, -50%)
+                rotate(-14deg);
 
-    background:
-        repeating-linear-gradient(
-            90deg,
-            #172e68 0px,
-            #172e68 5px,
-            #5d82d4 6px,
-            #172e68 7px
-        );
+            border:
+                1px solid
+                rgba(130,165,255,0.11);
 
-    border: 1px solid #809bd8;
-}
+            border-radius: 50%;
+        }
 
-.panel.left {
-    left: 0;
-}
+        .orbit-dot {
+            position: absolute;
 
-.panel.right {
-    right: 0;
-}
+            width: 7px;
+            height: 7px;
 
-/* =====================================================
-   ORBIT
-===================================================== */
+            right: 8%;
+            top: 12%;
 
-.orbit {
-    position: absolute;
+            border-radius: 50%;
 
-    width: 520px;
-    height: 170px;
+            background: #78e8ff;
 
-    left: 50%;
-    top: 50%;
+            box-shadow:
+                0 0 15px #78e8ff;
+        }
 
-    transform:
-        translate(-50%, -50%)
-        rotate(-15deg);
+        /* =========================================
+           SHOOTING STARS
+        ========================================= */
 
-    border: 1px solid rgba(120,160,255,.12);
+        .shooting-star {
+            position: absolute;
 
-    border-radius: 50%;
-}
+            width: 145px;
+            height: 2px;
 
-.orbit-dot {
-    position: absolute;
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255,255,255,0.95)
+                );
 
-    width: 8px;
-    height: 8px;
+            transform: rotate(-35deg);
 
-    right: 8%;
-    top: 12%;
+            opacity: 0;
 
-    border-radius: 50%;
+            animation:
+                shootingStar 8s linear infinite;
+        }
 
-    background: #7ee7ff;
+        .shooting-star.one {
+            top: 16%;
+            left: -10%;
+        }
 
-    box-shadow:
-        0 0 15px #7ee7ff;
-}
+        .shooting-star.two {
+            top: 40%;
+            left: 43%;
 
-/* =====================================================
-   SHOOTING STARS
-===================================================== */
+            animation-delay: 4s;
+        }
 
-.shooting-star {
-    position: absolute;
+        @keyframes shootingStar {
 
-    width: 140px;
-    height: 2px;
+            0% {
+                transform:
+                    translate(0,0)
+                    rotate(-35deg);
 
-    background:
-        linear-gradient(
-            90deg,
-            transparent,
-            rgba(255,255,255,.95)
-        );
+                opacity: 0;
+            }
 
-    transform: rotate(-35deg);
+            5% {
+                opacity: 1;
+            }
 
-    opacity: 0;
+            18% {
+                transform:
+                    translate(600px,350px)
+                    rotate(-35deg);
 
-    animation: shootingStar 8s linear infinite;
-}
+                opacity: 0;
+            }
 
-.shooting-star.one {
-    top: 15%;
-    left: -10%;
-}
+            100% {
+                opacity: 0;
+            }
+        }
 
-.shooting-star.two {
-    top: 38%;
-    left: 45%;
-    animation-delay: 4s;
-}
+        /* =========================================
+           MAIN CONTENT
+        ========================================= */
 
-@keyframes shootingStar {
+        .content {
+            position: relative;
+            z-index: 20;
 
-    0% {
-        transform:
-            translate(0,0)
-            rotate(-35deg);
+            width: 100%;
+            height: 100vh;
 
-        opacity: 0;
-    }
+            display: flex;
+            flex-direction: column;
 
-    5% {
-        opacity: 1;
-    }
+            justify-content: center;
+            align-items: center;
 
-    18% {
-        transform:
-            translate(600px,350px)
-            rotate(-35deg);
+            text-align: center;
 
-        opacity: 0;
-    }
+            padding:
+                30px
+                20px
+                145px;
+        }
 
-    100% {
-        opacity: 0;
-    }
-}
+        /* Brand */
 
-/* =====================================================
-   MAIN CONTENT
-===================================================== */
+        .brand {
+            font-size: clamp(30px, 4vw, 48px);
 
-.content {
-    position: relative;
-    z-index: 20;
+            font-weight: 700;
 
-    height: 100vh;
+            letter-spacing: 9px;
 
-    display: flex;
-    flex-direction: column;
+            margin-bottom: 34px;
 
-    justify-content: center;
-    align-items: center;
+            background:
+                linear-gradient(
+                    90deg,
+                    #ffffff,
+                    #9ddfff,
+                    #8b8cff,
+                    #ffffff
+                );
 
-    text-align: center;
+            background-size: 200% auto;
 
-    padding:
-        30px
-        20px
-        145px;
-}
+            -webkit-background-clip: text;
+            background-clip: text;
 
-/* Label */
+            color: transparent;
 
-.label {
-    display: flex;
-    align-items: center;
+            animation:
+                brandGlow 5s linear infinite;
+        }
 
-    gap: 20px;
+        @keyframes brandGlow {
+            to {
+                background-position: 200% center;
+            }
+        }
 
-    color: #9eaccb;
+        .brand-line {
+            display: block;
 
-    font-size: 13px;
+            width: 55px;
+            height: 1px;
 
-    letter-spacing: 7px;
+            margin:
+                -20px
+                auto
+                35px;
 
-    text-transform: uppercase;
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent,
+                    #72dfff,
+                    transparent
+                );
+        }
 
-    margin-bottom: 32px;
-}
+        /* Label */
 
-.label::before,
-.label::after {
-    content: "";
+        .label {
+            display: flex;
+            align-items: center;
 
-    width: 45px;
-    height: 1px;
+            gap: 18px;
 
-    background:
-        linear-gradient(
-            90deg,
-            transparent,
-            #7895dc
-        );
-}
+            color: #9daac5;
 
-.label::after {
-    background:
-        linear-gradient(
-            90deg,
-            #7895dc,
-            transparent
-        );
-}
+            font-size: 12px;
 
-/* Heading */
+            letter-spacing: 6px;
 
-h1 {
-    font-size: clamp(55px, 10vw, 125px);
+            text-transform: uppercase;
 
-    line-height: .9;
+            margin-bottom: 30px;
+        }
 
-    letter-spacing: -5px;
+        .label::before,
+        .label::after {
+            content: "";
 
-    font-weight: 700;
+            width: 42px;
+            height: 1px;
 
-    margin-bottom: 32px;
-}
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent,
+                    #7895dc
+                );
+        }
 
-.white {
-    color: white;
-}
+        .label::after {
+            background:
+                linear-gradient(
+                    90deg,
+                    #7895dc,
+                    transparent
+                );
+        }
 
-.gradient {
-    background:
-        linear-gradient(
-            90deg,
-            #65e6ff,
-            #668aff,
-            #955eff
-        );
+        /* Heading */
 
-    -webkit-background-clip: text;
-    background-clip: text;
+        h1 {
+            font-size: clamp(58px, 10vw, 125px);
 
-    color: transparent;
-}
+            line-height: 0.9;
 
-/* Description */
+            font-weight: 700;
 
-.description {
-    color: #b0bad0;
+            letter-spacing: -5px;
 
-    font-size: 17px;
+            margin-bottom: 30px;
+        }
 
-    line-height: 1.8;
+        h1 .white {
+            color: #ffffff;
+        }
 
-    letter-spacing: 1px;
+        h1 .gradient {
+            background:
+                linear-gradient(
+                    90deg,
+                    #67e8ff,
+                    #718bff,
+                    #a05dff
+                );
 
-    margin-bottom: 28px;
-}
+            -webkit-background-clip: text;
+            background-clip: text;
 
-/* =====================================================
-   COLLABORATION MESSAGE
-===================================================== */
+            color: transparent;
+        }
 
-.interest {
-    color: #7f8da8;
+        /* Description */
 
-    font-size: 13px;
+        .description {
+            max-width: 650px;
 
-    letter-spacing: .5px;
+            color: #adb8cf;
 
-    margin-bottom: 18px;
-}
+            font-size: 16px;
 
-.interest strong {
-    color: #c5d1e8;
+            line-height: 1.8;
 
-    font-weight: 500;
-}
+            letter-spacing: 0.8px;
 
-/* CTA */
+            margin-bottom: 23px;
+        }
 
-.contact {
-    display: inline-flex;
+        /* Collaboration */
 
-    align-items: center;
+        .interest {
+            color: #75829d;
 
-    gap: 11px;
+            font-size: 13px;
 
-    padding: 13px 28px;
+            margin-bottom: 17px;
 
-    border-radius: 50px;
+            letter-spacing: 0.4px;
+        }
 
-    border: 1px solid rgba(150,180,255,.45);
+        .interest strong {
+            color: #cbd5e8;
 
-    background:
-        rgba(10,20,50,.35);
+            font-weight: 500;
+        }
 
-    color: #dce5ff;
+        /* CTA */
 
-    text-decoration: none;
+        .contact {
+            display: inline-flex;
 
-    font-size: 14px;
+            align-items: center;
 
-    backdrop-filter: blur(10px);
+            gap: 11px;
 
-    transition: .3s ease;
-}
+            padding:
+                13px
+                28px;
 
-.contact:hover {
-    transform: translateY(-3px);
+            border:
+                1px solid
+                rgba(145,180,255,0.45);
 
-    border-color: #91b0ff;
+            border-radius: 50px;
 
-    box-shadow:
-        0 0 30px rgba(70,130,255,.3);
-}
+            background:
+                rgba(10,20,50,0.35);
 
-/* =====================================================
-   EARTH HORIZON
-===================================================== */
+            color: #dce6ff;
 
-.earth {
-    position: absolute;
+            text-decoration: none;
 
-    z-index: 10;
+            font-size: 14px;
 
-    width: 155%;
-    height: 430px;
+            backdrop-filter: blur(10px);
 
-    left: -27.5%;
-    bottom: -350px;
+            transition:
+                transform .3s ease,
+                box-shadow .3s ease,
+                border-color .3s ease;
+        }
 
-    border-radius: 50%;
+        .contact:hover {
+            transform: translateY(-3px);
 
-    background:
-        radial-gradient(
-            ellipse at 50% 0%,
-            rgba(60,120,210,.6),
-            rgba(15,35,85,.55) 30%,
-            #01030a 70%
-        );
+            border-color:
+                rgba(150,195,255,0.9);
 
-    border-top:
-        2px solid
-        rgba(120,190,255,.9);
+            box-shadow:
+                0 0 30px
+                rgba(70,130,255,0.3);
+        }
 
-    box-shadow:
-        0 -8px 30px rgba(70,150,255,.75),
-        0 -20px 80px rgba(50,100,255,.25);
-}
+        .contact-icon {
+            color: #76e6ff;
 
-.earth::before {
-    content: "";
+            font-size: 17px;
+        }
 
-    position: absolute;
+        /* =========================================
+           EARTH HORIZON
+        ========================================= */
 
-    width: 400px;
-    height: 80px;
+        .earth {
+            position: absolute;
 
-    left: 50%;
-    top: -30px;
+            z-index: 10;
 
-    transform: translateX(-50%);
+            width: 155%;
+            height: 430px;
 
-    background:
-        rgba(100,190,255,.8);
+            left: -27.5%;
+            bottom: -350px;
 
-    filter: blur(35px);
+            border-radius: 50%;
 
-    border-radius: 50%;
-}
+            background:
+                radial-gradient(
+                    ellipse at 50% 0%,
+                    rgba(60,120,210,0.6),
+                    rgba(15,35,85,0.55) 30%,
+                    #01030a 70%
+                );
 
-.earth::after {
-    content: "";
+            border-top:
+                2px solid
+                rgba(120,190,255,0.9);
 
-    position: absolute;
+            box-shadow:
+                0 -8px 30px
+                rgba(70,150,255,0.75),
 
-    width: 8px;
-    height: 8px;
+                0 -20px 80px
+                rgba(50,100,255,0.25);
+        }
 
-    left: 50%;
-    top: -5px;
+        .earth::before {
+            content: "";
 
-    transform: translateX(-50%);
+            position: absolute;
 
-    background: white;
+            width: 400px;
+            height: 80px;
 
-    border-radius: 50%;
+            left: 50%;
+            top: -30px;
 
-    box-shadow:
-        0 0 15px 5px white,
-        0 0 40px 15px rgba(80,160,255,.8);
-}
+            transform:
+                translateX(-50%);
 
-/* =====================================================
-   MOBILE
-===================================================== */
+            background:
+                rgba(100,190,255,0.8);
 
-@media (max-width: 600px) {
+            filter: blur(35px);
 
-    .sun {
-        width: 70px;
-        height: 70px;
+            border-radius: 50%;
+        }
 
-        right: 7%;
-        top: 9%;
-    }
+        .earth::after {
+            content: "";
 
-    .planet-small {
-        width: 55px;
-        height: 55px;
+            position: absolute;
 
-        left: 6%;
-        top: 19%;
-    }
+            width: 8px;
+            height: 8px;
 
-    .planet-small::after {
-        width: 85px;
-        height: 25px;
+            left: 50%;
+            top: -5px;
 
-        left: -15px;
-        top: 15px;
-    }
+            transform:
+                translateX(-50%);
 
-    .satellite {
-        right: 5%;
-        top: 30%;
+            background: #ffffff;
 
-        transform: scale(.7);
-    }
+            border-radius: 50%;
 
-    .orbit {
-        width: 320px;
-        height: 110px;
-    }
+            box-shadow:
+                0 0 15px 5px #ffffff,
+                0 0 40px 15px
+                rgba(80,160,255,0.8);
+        }
 
-    .label {
-        font-size: 10px;
-        letter-spacing: 4px;
-        gap: 10px;
-    }
+        /* =========================================
+           MOBILE
+        ========================================= */
 
-    .label::before,
-    .label::after {
-        width: 22px;
-    }
+        @media (max-width: 600px) {
 
-    h1 {
-        font-size: 62px;
-        letter-spacing: -3px;
-    }
+            .moon {
+                width: 72px;
+                height: 72px;
 
-    .description {
-        font-size: 14px;
-        line-height: 1.7;
-    }
+                right: 7%;
+                top: 9%;
+            }
 
-    .interest {
-        font-size: 12px;
-    }
+            .planet {
+                width: 52px;
+                height: 52px;
 
-    .contact {
-        padding: 12px 23px;
-    }
+                left: 6%;
+                top: 19%;
+            }
 
-    .earth {
-        width: 190%;
-        left: -45%;
-        bottom: -285px;
-    }
-}
-</style>
+            .planet::after {
+                width: 85px;
+                height: 23px;
+
+                left: -16px;
+                top: 15px;
+            }
+
+            .satellite {
+                right: 4%;
+                top: 30%;
+
+                transform: scale(0.7);
+            }
+
+            .orbit {
+                width: 320px;
+                height: 110px;
+            }
+
+            .brand {
+                font-size: 27px;
+                letter-spacing: 7px;
+            }
+
+            .label {
+                font-size: 9px;
+                letter-spacing: 4px;
+                gap: 10px;
+            }
+
+            .label::before,
+            .label::after {
+                width: 22px;
+            }
+
+            h1 {
+                font-size: 62px;
+                letter-spacing: -3px;
+            }
+
+            .description {
+                font-size: 14px;
+                line-height: 1.7;
+                max-width: 340px;
+            }
+
+            .interest {
+                font-size: 12px;
+            }
+
+            .contact {
+                padding:
+                    12px
+                    23px;
+            }
+
+            .earth {
+                width: 190%;
+                left: -45%;
+                bottom: -285px;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
 <div class="space">
 
-    <!-- Background -->
+    <!-- Stars -->
     <div class="stars"></div>
-    <div class="stars2"></div>
-    <div class="stars3"></div>
+    <div class="stars-two"></div>
+    <div class="stars-three"></div>
 
     <!-- Nebula -->
     <div class="nebula"></div>
 
-    <!-- Sun -->
-    <div class="sun"></div>
+    <!-- Moon -->
+    <div class="moon"></div>
 
-    <!-- Planet -->
-    <div class="planet-small"></div>
+    <!-- Small Planet -->
+    <div class="planet"></div>
 
     <!-- Satellite -->
     <div class="satellite">
-        <div class="panel left"></div>
+
+        <div class="solar-panel left"></div>
+
         <div class="satellite-body"></div>
-        <div class="panel right"></div>
+
+        <div class="solar-panel right"></div>
+
     </div>
 
     <!-- Orbit -->
@@ -809,12 +962,18 @@ h1 {
         <div class="orbit-dot"></div>
     </div>
 
-    <!-- Shooting stars -->
+    <!-- Shooting Stars -->
     <div class="shooting-star one"></div>
     <div class="shooting-star two"></div>
 
-    <!-- Main content -->
+    <!-- Main Content -->
     <main class="content">
+
+        <div class="brand">
+            LUNARAI
+        </div>
+
+        <span class="brand-line"></span>
 
         <div class="label">
             <span></span>
@@ -828,29 +987,31 @@ h1 {
         </h1>
 
         <p class="description">
-            We're working on something exciting.<br>
-            Something new is taking shape.<br>
-            Stay tuned for the journey.
+            A new idea is taking shape.<br>
+            We're building something designed to take
+            imagination a little further.
         </p>
 
         <p class="interest">
-            <strong>Have an idea for this space?</strong>
+            <strong>Have an idea for LUNARAI?</strong>
             Let's create something remarkable together.
         </p>
 
         <a
             class="contact"
-            href="mailto:enquries@novvan.us?subject=Interested in this opportunity"
+            href="mailto:your@email.com?subject=LUNARAI%20Collaboration"
         >
-            ✦ &nbsp; Let's collaborate
+            <span class="contact-icon">✦</span>
+            Let's collaborate
         </a>
 
     </main>
 
-    <!-- Earth horizon -->
+    <!-- Earth Horizon -->
     <div class="earth"></div>
 
 </div>
 
 </body>
 </html>
+```
