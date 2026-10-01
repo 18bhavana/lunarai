@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Coming Soon</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    overflow: hidden;
+    background: #01030b;
+    color: #fff;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+}
+
+/* =====================================================
+   SPACE
+===================================================== */
+
+.space {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            circle at 50% 42%,
+            rgba(35, 65, 150, .18),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at 85% 15%,
+            rgba(100, 45, 190, .12),
+            transparent 30%
+        ),
+        linear-gradient(
+            180deg,
+            #01030b 0%,
+            #020719 55%,
+            #01030b 100%
+        );
+}
+
+/* =====================================================
+   STARS
+===================================================== */
+
+.stars,
+.stars2,
+.stars3 {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.stars {
+    background-image:
+        radial-gradient(circle, #fff 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(255,255,255,.7) 1px, transparent 1.5px);
+
+    background-size:
+        170px 170px,
+        260px 260px;
+
+    background-position:
+        10px 20px,
+        100px 80px;
+
+    opacity: .65;
+}
+
+.stars2 {
+    background-image:
+        radial-gradient(circle, #fff 1.2px, transparent 2px),
+        radial-gradient(circle, rgba(100,180,255,.8) 1px, transparent 2px);
+
+    background-size:
+        330px 330px,
+        420px 420px;
+
+    background-position:
+        40px 120px,
+        200px 50px;
+
+    opacity: .45;
+}
+
+.stars3 {
+    background-image:
+        radial-gradient(circle, white 1.5px, transparent 2px);
+
+    background-size: 520px 520px;
+    background-position: 80px 200px;
+
+    opacity: .3;
+}
+
+/* =====================================================
+   NEBULA
+===================================================== */
+
+.nebula {
+    position: absolute;
+
+    width: 900px;
+    height: 600px;
+
+    left: 50%;
+    top: 10%;
+
+    transform: translateX(-50%);
+
+    background:
+        radial-gradient(
+            ellipse,
+            rgba(70, 100, 255, .14),
+            rgba(130, 50, 220, .06) 35%,
+            transparent 70%
+        );
+
+    filter: blur(45px);
+
+    animation: nebulaMove 12s ease-in-out infinite alternate;
+}
+
+@keyframes nebulaMove {
+    from {
+        transform: translateX(-50%) scale(1);
+    }
+
+    to {
+        transform: translateX(-50%) scale(1.12);
+    }
+}
+
+/* =====================================================
+   SUN
+===================================================== */
+
+.sun {
+    position: absolute;
+
+    width: 125px;
+    height: 125px;
+
+    top: 10%;
+    right: 12%;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle at 35% 35%,
+            #fff,
+            #ffe77a 20%,
+            #ffb52e 55%,
+            #ff641f 75%,
+            transparent 76%
+        );
+
+    box-shadow:
+        0 0 30px #ffbd45,
+        0 0 80px rgba(255,170,40,.55),
+        0 0 160px rgba(255,110,30,.25);
+
+    animation: sunPulse 5s ease-in-out infinite;
+}
+
+@keyframes sunPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.06);
+    }
+}
+
+/* =====================================================
+   PLANET
+===================================================== */
+
+.planet-small {
+    position: absolute;
+
+    width: 95px;
+    height: 95px;
+
+    left: 9%;
+    top: 17%;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle at 30% 30%,
+            #c3d8ff,
+            #5272c9 35%,
+            #18275d 70%,
+            #050a20
+        );
+
+    box-shadow:
+        inset -20px -15px 30px rgba(0,0,0,.6),
+        0 0 30px rgba(80,120,255,.25);
+}
+
+.planet-small::after {
+    content: "";
+
+    position: absolute;
+
+    width: 150px;
+    height: 38px;
+
+    left: -28px;
+    top: 30px;
+
+    border: 2px solid rgba(150,180,255,.35);
+
+    border-radius: 50%;
+
+    transform: rotate(-18deg);
+}
+
+/* =====================================================
+   SATELLITE
+===================================================== */
+
+.satellite {
+    position: absolute;
+
+    width: 100px;
+    height: 70px;
+
+    right: 17%;
+    top: 34%;
+
+    transform: rotate(-12deg);
+
+    animation: satelliteFloat 8s ease-in-out infinite;
+}
+
+@keyframes satelliteFloat {
+    0%, 100% {
+        transform: translate(0,0) rotate(-12deg);
+    }
+
+    50% {
+        transform: translate(-35px,18px) rotate(-5deg);
+    }
+}
+
+.satellite-body {
+    position: absolute;
+
+    width: 42px;
+    height: 32px;
+
+    left: 29px;
+    top: 18px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #e5ebf5,
+            #68758b
+        );
+
+    border-radius: 4px;
+}
+
+.satellite-body::before {
+    content: "";
+
+    position: absolute;
+
+    width: 24px;
+    height: 24px;
+
+    right: -15px;
+    top: 4px;
+
+    border: 2px solid #cfd9e8;
+
+    border-radius: 50%;
+}
+
+.satellite-body::after {
+    content: "";
+
+    position: absolute;
+
+    width: 20px;
+    height: 2px;
+
+    right: -27px;
+    top: 15px;
+
+    background: #cfd9e8;
+
+    transform: rotate(-15deg);
+}
+
+.panel {
+    position: absolute;
+
+    width: 27px;
+    height: 42px;
+
+    top: 13px;
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            #172e68 0px,
+            #172e68 5px,
+            #5d82d4 6px,
+            #172e68 7px
+        );
+
+    border: 1px solid #809bd8;
+}
+
+.panel.left {
+    left: 0;
+}
+
+.panel.right {
+    right: 0;
+}
+
+/* =====================================================
+   ORBIT
+===================================================== */
+
+.orbit {
+    position: absolute;
+
+    width: 520px;
+    height: 170px;
+
+    left: 50%;
+    top: 50%;
+
+    transform:
+        translate(-50%, -50%)
+        rotate(-15deg);
+
+    border: 1px solid rgba(120,160,255,.12);
+
+    border-radius: 50%;
+}
+
+.orbit-dot {
+    position: absolute;
+
+    width: 8px;
+    height: 8px;
+
+    right: 8%;
+    top: 12%;
+
+    border-radius: 50%;
+
+    background: #7ee7ff;
+
+    box-shadow:
+        0 0 15px #7ee7ff;
+}
+
+/* =====================================================
+   SHOOTING STARS
+===================================================== */
+
+.shooting-star {
+    position: absolute;
+
+    width: 140px;
+    height: 2px;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255,255,255,.95)
+        );
+
+    transform: rotate(-35deg);
+
+    opacity: 0;
+
+    animation: shootingStar 8s linear infinite;
+}
+
+.shooting-star.one {
+    top: 15%;
+    left: -10%;
+}
+
+.shooting-star.two {
+    top: 38%;
+    left: 45%;
+    animation-delay: 4s;
+}
+
+@keyframes shootingStar {
+
+    0% {
+        transform:
+            translate(0,0)
+            rotate(-35deg);
+
+        opacity: 0;
+    }
+
+    5% {
+        opacity: 1;
+    }
+
+    18% {
+        transform:
+            translate(600px,350px)
+            rotate(-35deg);
+
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+/* =====================================================
+   MAIN CONTENT
+===================================================== */
+
+.content {
+    position: relative;
+    z-index: 20;
+
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+
+    text-align: center;
+
+    padding:
+        30px
+        20px
+        145px;
+}
+
+/* Label */
+
+.label {
+    display: flex;
+    align-items: center;
+
+    gap: 20px;
+
+    color: #9eaccb;
+
+    font-size: 13px;
+
+    letter-spacing: 7px;
+
+    text-transform: uppercase;
+
+    margin-bottom: 32px;
+}
+
+.label::before,
+.label::after {
+    content: "";
+
+    width: 45px;
+    height: 1px;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            #7895dc
+        );
+}
+
+.label::after {
+    background:
+        linear-gradient(
+            90deg,
+            #7895dc,
+            transparent
+        );
+}
+
+/* Heading */
+
+h1 {
+    font-size: clamp(55px, 10vw, 125px);
+
+    line-height: .9;
+
+    letter-spacing: -5px;
+
+    font-weight: 700;
+
+    margin-bottom: 32px;
+}
+
+.white {
+    color: white;
+}
+
+.gradient {
+    background:
+        linear-gradient(
+            90deg,
+            #65e6ff,
+            #668aff,
+            #955eff
+        );
+
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    color: transparent;
+}
+
+/* Description */
+
+.description {
+    color: #b0bad0;
+
+    font-size: 17px;
+
+    line-height: 1.8;
+
+    letter-spacing: 1px;
+
+    margin-bottom: 28px;
+}
+
+/* =====================================================
+   COLLABORATION MESSAGE
+===================================================== */
+
+.interest {
+    color: #7f8da8;
+
+    font-size: 13px;
+
+    letter-spacing: .5px;
+
+    margin-bottom: 18px;
+}
+
+.interest strong {
+    color: #c5d1e8;
+
+    font-weight: 500;
+}
+
+/* CTA */
+
+.contact {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    padding: 13px 28px;
+
+    border-radius: 50px;
+
+    border: 1px solid rgba(150,180,255,.45);
+
+    background:
+        rgba(10,20,50,.35);
+
+    color: #dce5ff;
+
+    text-decoration: none;
+
+    font-size: 14px;
+
+    backdrop-filter: blur(10px);
+
+    transition: .3s ease;
+}
+
+.contact:hover {
+    transform: translateY(-3px);
+
+    border-color: #91b0ff;
+
+    box-shadow:
+        0 0 30px rgba(70,130,255,.3);
+}
+
+/* =====================================================
+   EARTH HORIZON
+===================================================== */
+
+.earth {
+    position: absolute;
+
+    z-index: 10;
+
+    width: 155%;
+    height: 430px;
+
+    left: -27.5%;
+    bottom: -350px;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            ellipse at 50% 0%,
+            rgba(60,120,210,.6),
+            rgba(15,35,85,.55) 30%,
+            #01030a 70%
+        );
+
+    border-top:
+        2px solid
+        rgba(120,190,255,.9);
+
+    box-shadow:
+        0 -8px 30px rgba(70,150,255,.75),
+        0 -20px 80px rgba(50,100,255,.25);
+}
+
+.earth::before {
+    content: "";
+
+    position: absolute;
+
+    width: 400px;
+    height: 80px;
+
+    left: 50%;
+    top: -30px;
+
+    transform: translateX(-50%);
+
+    background:
+        rgba(100,190,255,.8);
+
+    filter: blur(35px);
+
+    border-radius: 50%;
+}
+
+.earth::after {
+    content: "";
+
+    position: absolute;
+
+    width: 8px;
+    height: 8px;
+
+    left: 50%;
+    top: -5px;
+
+    transform: translateX(-50%);
+
+    background: white;
+
+    border-radius: 50%;
+
+    box-shadow:
+        0 0 15px 5px white,
+        0 0 40px 15px rgba(80,160,255,.8);
+}
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 600px) {
+
+    .sun {
+        width: 70px;
+        height: 70px;
+
+        right: 7%;
+        top: 9%;
+    }
+
+    .planet-small {
+        width: 55px;
+        height: 55px;
+
+        left: 6%;
+        top: 19%;
+    }
+
+    .planet-small::after {
+        width: 85px;
+        height: 25px;
+
+        left: -15px;
+        top: 15px;
+    }
+
+    .satellite {
+        right: 5%;
+        top: 30%;
+
+        transform: scale(.7);
+    }
+
+    .orbit {
+        width: 320px;
+        height: 110px;
+    }
+
+    .label {
+        font-size: 10px;
+        letter-spacing: 4px;
+        gap: 10px;
+    }
+
+    .label::before,
+    .label::after {
+        width: 22px;
+    }
+
+    h1 {
+        font-size: 62px;
+        letter-spacing: -3px;
+    }
+
+    .description {
+        font-size: 14px;
+        line-height: 1.7;
+    }
+
+    .interest {
+        font-size: 12px;
+    }
+
+    .contact {
+        padding: 12px 23px;
+    }
+
+    .earth {
+        width: 190%;
+        left: -45%;
+        bottom: -285px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="space">
+
+    <!-- Background -->
+    <div class="stars"></div>
+    <div class="stars2"></div>
+    <div class="stars3"></div>
+
+    <!-- Nebula -->
+    <div class="nebula"></div>
+
+    <!-- Sun -->
+    <div class="sun"></div>
+
+    <!-- Planet -->
+    <div class="planet-small"></div>
+
+    <!-- Satellite -->
+    <div class="satellite">
+        <div class="panel left"></div>
+        <div class="satellite-body"></div>
+        <div class="panel right"></div>
+    </div>
+
+    <!-- Orbit -->
+    <div class="orbit">
+        <div class="orbit-dot"></div>
+    </div>
+
+    <!-- Shooting stars -->
+    <div class="shooting-star one"></div>
+    <div class="shooting-star two"></div>
+
+    <!-- Main content -->
+    <main class="content">
+
+        <div class="label">
+            <span></span>
+            Something New
+            <span></span>
+        </div>
+
+        <h1>
+            <span class="white">COMING</span>
+            <span class="gradient">SOON</span>
+        </h1>
+
+        <p class="description">
+            We're working on something exciting.<br>
+            Something new is taking shape.<br>
+            Stay tuned for the journey.
+        </p>
+
+        <p class="interest">
+            <strong>Have an idea for this space?</strong>
+            Let's create something remarkable together.
+        </p>
+
+        <a
+            class="contact"
+            href="mailto:enquries@novvan.us?subject=Interested in this opportunity"
+        >
+            ✦ &nbsp; Let's collaborate
+        </a>
+
+    </main>
+
+    <!-- Earth horizon -->
+    <div class="earth"></div>
+
+</div>
+
+</body>
+</html>
