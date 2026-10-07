@@ -1,0 +1,143 @@
+{
+  "site": {
+    "name": "DevNotes",
+    "tagline": "Deep, interview-focused tech notes: concepts, code, edge cases and quick revision."
+  },
+  "paths": [
+    {
+      "id": "java-backend",
+      "name": "Java Backend Developer",
+      "icon": "java",
+      "steps": [
+        "java/core-java",
+        "java/collections",
+        "java/java-8",
+        "java/exceptions",
+        "java/reflection",
+        "java/multithreading",
+        "spring/spring-boot",
+        "microservices/microservices-basics"
+      ]
+    },
+    {
+      "id": "java-interview",
+      "name": "Java Interview Sprint",
+      "icon": "target",
+      "steps": [
+        "java/core-java",
+        "java/collections",
+        "java/java-8",
+        "java/exceptions",
+        "java/reflection",
+        "java/multithreading"
+      ]
+    },
+    {
+      "id": "architecture",
+      "name": "Data & Architecture",
+      "icon": "layers",
+      "steps": [
+        "database/sql",
+        "microservices/microservices-basics",
+        "system-design/system-design-basics"
+      ]
+    }
+  ],
+  "tracks": [
+    {
+      "id": "java",
+      "name": "Java",
+      "description": "Core Java fundamentals through modern Java features.",
+      "topics": [
+        {
+          "id": "core-java",
+          "name": "Core Java",
+          "description": "OOP, SOLID, Object class, equality, Strings, immutability, wrappers, enums, records, sealed classes, var and pass-by-value.",
+          "status": "live"
+        },
+        {
+          "id": "collections",
+          "name": "Collection Framework",
+          "description": "List, Set, Queue, Deque and Map implementations, HashMap internals, ConcurrentHashMap, load factor and fail-fast vs fail-safe iterators.",
+          "status": "live"
+        },
+        {
+          "id": "java-8",
+          "name": "Java 8 & Streams",
+          "description": "Streams from basics to internals: filter, map, sorting, reduce, collectors, groupingBy, flatMap, Optional, primitive streams, functional interfaces, method references, parallel streams, custom collectors, Spliterator and the java.time API.",
+          "status": "live"
+        },
+        {
+          "id": "exceptions",
+          "name": "Exception Handling",
+          "description": "Checked vs unchecked, try-with-resources, custom exceptions, finally, suppressed exceptions, propagation, overriding rules, best practices and Spring Boot error handling.",
+          "status": "live"
+        },
+        {
+          "id": "reflection",
+          "name": "Reflection",
+          "description": "The Class class, obtaining Class objects, class loading internals, inspecting classes, constructors, fields and methods, annotations and dynamic proxies (JDK vs CGLIB).",
+          "status": "live"
+        },
+        {
+          "id": "multithreading",
+          "name": "Multithreading",
+          "description": "Threads, executors, locks, concurrency utilities.",
+          "status": "soon"
+        }
+      ]
+    },
+    {
+      "id": "spring",
+      "name": "Spring",
+      "description": "Spring Core, Spring Boot, Data JPA and Security.",
+      "topics": [
+        {
+          "id": "spring-boot",
+          "name": "Spring Boot",
+          "description": "Auto-configuration, starters, REST APIs, profiles.",
+          "status": "soon"
+        }
+      ]
+    },
+    {
+      "id": "microservices",
+      "name": "Microservices",
+      "description": "Service design, communication and resilience.",
+      "topics": [
+        {
+          "id": "microservices-basics",
+          "name": "Microservices Fundamentals",
+          "description": "Patterns, service discovery, gateways, resilience.",
+          "status": "soon"
+        }
+      ]
+    },
+    {
+      "id": "database",
+      "name": "Database",
+      "description": "SQL, indexing, transactions and JPA.",
+      "topics": [
+        {
+          "id": "sql",
+          "name": "SQL",
+          "description": "Joins, indexes, query tuning, transactions.",
+          "status": "soon"
+        }
+      ]
+    },
+    {
+      "id": "system-design",
+      "name": "System Design",
+      "description": "Scalability, caching, queues and real-world architectures.",
+      "topics": [
+        {
+          "id": "system-design-basics",
+          "name": "System Design Basics",
+          "description": "Load balancing, caching, sharding, CAP.",
+          "status": "soon"
+        }
+      ]
+    }
+  ]
+}
