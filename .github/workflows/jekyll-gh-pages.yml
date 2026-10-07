@@ -32,7 +32,7 @@ jobs:
 
       - name: Prepare website
         run: |
-          cp devnotes-website/CNAME devnotes-website/site/CNAME
+          cp CNAME devnotes-website/site/CNAME
 
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
