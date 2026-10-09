@@ -1,0 +1,579 @@
+---
+title: GROUP BY and Aggregate Functions
+subtitle: Summarizing millions of rows into business answers — COUNT, SUM, AVG, MIN, MAX, grouping by several columns, COUNT(*) vs COUNT(column), NULL behaviour and ONLY_FULL_GROUP_BY.
+order: 13
+---
+
+## Introduction
+
+This chapter begins the **aggregation and reporting** phase — where SQL becomes extremely powerful for business reports, dashboards, revenue analytics, sales summaries, department reports, booking statistics and backend reporting APIs.
+
+> [!IMPORTANT]
+> Goal: learn how MySQL **summarizes thousands or millions of rows into meaningful business information**.
+
+A 5+ years Java backend developer should be comfortable writing queries such as total revenue per product, average salary per department, orders per customer, daily booking counts, monthly sales and the highest transaction per user.
+
+## What is GROUP BY?
+
+`GROUP BY` **combines rows that have the same value into logical groups**.
+
+| id | name | department | salary |
+| --- | --- | --- | --- |
+| 1 | John | IT | 70000 |
+| 2 | David | IT | 90000 |
+| 3 | Lisa | HR | 50000 |
+| 4 | Alex | HR | 55000 |
+| 5 | Mary | Finance | 80000 |
+| 6 | Tom | Finance | 85000 |
+
+`SELECT * FROM employees;` returns six individual rows. With:
+
+```sql
+SELECT department
+FROM employees
+GROUP BY department;
+```
+
+```output
+IT
+HR
+Finance
+```
+
+Instead of six rows, there's **one row per distinct department**:
+
+```buckets
+IT: John, David
+HR: Lisa, Alex
+Finance: Mary, Tom
+```
+
+The real power of `GROUP BY` appears when it's combined with **aggregate functions**.
+
+## Why Do We Need Aggregation?
+
+Your manager asks: *how many employees are in each department?* You don't want the list John, David, Lisa, Alex, Mary, Tom — you want **IT → 2, HR → 2, Finance → 2**. That's aggregation: many rows summarized into meaningful business results.
+
+## Aggregate Functions
+
+Aggregate functions **calculate a value across multiple rows**. The five most important:
+
+| Function | Purpose |
+| --- | --- |
+| `COUNT()` | Count rows or non-`NULL` values |
+| `SUM()` | Calculate a total |
+| `AVG()` | Calculate an average |
+| `MIN()` | Find the minimum value |
+| `MAX()` | Find the maximum value |
+
+## COUNT()
+
+```sql
+SELECT COUNT(*)
+FROM employees;          -- 6
+```
+
+### Employees in Each Department
+
+```sql
+SELECT department,
+       COUNT(*) AS employee_count
+FROM employees
+GROUP BY department;
+```
+
+| Department | Employee count |
+| --- | --- |
+| IT | 2 |
+| HR | 2 |
+| Finance | 2 |
+
+```flow-h
+GROUP BY department
+Create department groups
+COUNT rows inside each group
+```
+
+## SUM()
+
+```sql
+SELECT SUM(salary) AS total_salary
+FROM employees;          -- 430000
+
+SELECT department,
+       SUM(salary) AS total_salary
+FROM employees
+GROUP BY department;
+```
+
+| Department | Total salary |
+| --- | --- |
+| IT | 160000 |
+| HR | 105000 |
+| Finance | 165000 |
+
+(IT = 70000 + 90000 = 160000.)
+
+## AVG()
+
+```sql
+SELECT AVG(salary) AS average_salary
+FROM employees;          -- 71666.67
+
+SELECT department,
+       AVG(salary) AS average_salary
+FROM employees
+GROUP BY department;
+```
+
+| Department | Average salary |
+| --- | --- |
+| IT | 80000 |
+| HR | 52500 |
+| Finance | 82500 |
+
+## MAX() and MIN()
+
+```sql
+SELECT MAX(salary) AS highest_salary
+FROM employees;          -- 90000
+
+SELECT department,
+       MAX(salary) AS highest_salary,
+       MIN(salary) AS lowest_salary
+FROM employees
+GROUP BY department;
+```
+
+| Department | Highest salary | Lowest salary |
+| --- | --- | --- |
+| IT | 90000 | 70000 |
+| HR | 55000 | 50000 |
+| Finance | 85000 | 80000 |
+
+## Multiple Aggregates Together
+
+Extremely common in reporting APIs:
+
+```sql
+SELECT department,
+       COUNT(*)    AS employee_count,
+       SUM(salary) AS total_salary,
+       AVG(salary) AS average_salary,
+       MIN(salary) AS lowest_salary,
+       MAX(salary) AS highest_salary
+FROM employees
+GROUP BY department;
+```
+
+| Department | Count | Sum | Avg | Min | Max |
+| --- | --- | --- | --- | --- | --- |
+| IT | 2 | 160000 | 80000 | 70000 | 90000 |
+| HR | 2 | 105000 | 52500 | 50000 | 55000 |
+| Finance | 2 | 165000 | 82500 | 80000 | 85000 |
+
+This is exactly how many reporting and dashboard APIs are built — a department report with employee count, total, average, minimum and maximum salary.
+
+## Real Business Examples
+
+### Customer-Wise Spending
+
+| Order | Customer | Amount |
+| --- | --- | --- |
+| 1 | A | 100 |
+| 2 | B | 250 |
+| 3 | A | 400 |
+| 4 | B | 300 |
+| 5 | C | 150 |
+
+```sql
+SELECT customer,
+       SUM(amount) AS total_spent
+FROM orders
+GROUP BY customer;
+```
+
+| Customer | Total spent |
+| --- | --- |
+| A | 500 |
+| B | 550 |
+| C | 150 |
+
+### Sales, Revenue and Other Reports
+
+```sql
+-- Total quantity sold for each product
+SELECT product_id,
+       SUM(quantity) AS total_sold
+FROM sales
+GROUP BY product_id;
+
+-- Total revenue generated by each product
+SELECT product_id,
+       SUM(quantity * price) AS revenue
+FROM sales
+GROUP BY product_id;
+```
+
+The expression `quantity * price` is calculated **for each row**; `SUM(...)` then adds those values within each product group.
+
+```sql
+-- Daily revenue
+SELECT order_date,
+       SUM(total_amount) AS daily_revenue
+FROM orders
+GROUP BY order_date;
+
+-- Department salary report
+SELECT department,
+       COUNT(*)    AS employee_count,
+       AVG(salary) AS average_salary,
+       MAX(salary) AS highest_salary
+FROM employees
+GROUP BY department;
+
+-- Orders per customer
+SELECT customer_id,
+       COUNT(*) AS order_count
+FROM orders
+GROUP BY customer_id;
+```
+
+## GROUP BY Multiple Columns
+
+| Department | Gender | Salary |
+| --- | --- | --- |
+| IT | M | 70000 |
+| IT | F | 90000 |
+| HR | M | 50000 |
+| HR | F | 55000 |
+| IT | M | 80000 |
+
+Count employees for every **department + gender** combination:
+
+```sql
+SELECT department,
+       gender,
+       COUNT(*) AS employee_count
+FROM employees
+GROUP BY department, gender;
+```
+
+| Department | Gender | Count |
+| --- | --- | --- |
+| IT | M | 2 |
+| IT | F | 1 |
+| HR | M | 1 |
+| HR | F | 1 |
+
+The grouping key is now **department + gender** — each unique combination becomes a separate group.
+
+## COUNT(*) vs COUNT(column)
+
+A common interview question.
+
+| id | name | bonus |
+| --- | --- | --- |
+| 1 | Rahul | 1000 |
+| 2 | Amit | NULL |
+| 3 | Neha | 2000 |
+
+```sql
+SELECT COUNT(*)     FROM employees;   -- 3: counts rows
+SELECT COUNT(bonus) FROM employees;   -- 2: ignores NULL values
+```
+
+| Expression | Counts |
+| --- | --- |
+| `COUNT(*)` | Rows |
+| `COUNT(column)` | Non-`NULL` values |
+| `COUNT(DISTINCT column)` | Unique non-`NULL` values |
+
+```sql
+SELECT COUNT(DISTINCT department) AS department_count
+FROM employees;   -- IT, IT, HR, Finance, Finance → 3
+```
+
+## NULL Behaviour in Aggregate Functions
+
+Aggregate functions generally **ignore `NULL`**. With salaries `10000`, `20000`, `NULL`:
+
+| Query | Result |
+| --- | --- |
+| `COUNT(*)` | 3 |
+| `COUNT(salary)` | 2 |
+| `SUM(salary)` | 30000 |
+| `AVG(salary)` | **15000** |
+
+**Why not 10000?** Because `AVG()` ignores `NULL`: (10000 + 20000) ÷ **2** non-`NULL` values = 15000. This behaviour is extremely important in production reporting (use `AVG(COALESCE(salary, 0))` if `NULL` should count as zero).
+
+> [!NOTE]
+> Over an **empty** set (or only `NULL`s), `SUM`, `AVG`, `MIN` and `MAX` return `NULL`, while `COUNT` returns `0`. Wrap totals in `COALESCE(SUM(x), 0)` for APIs.
+
+## SQL Logical Execution Order
+
+```sql
+SELECT department,
+       AVG(salary) AS average_salary
+FROM employees
+WHERE salary > 50000
+GROUP BY department
+HAVING AVG(salary) > 70000
+ORDER BY average_salary DESC
+LIMIT 5;
+```
+
+```flow-h
+FROM
+WHERE
+GROUP BY
+HAVING
+SELECT
+ORDER BY
+LIMIT
+```
+
+The most important distinction:
+
+| WHERE | HAVING |
+| --- | --- |
+| Filters individual rows | Filters groups |
+| Before grouping | After grouping |
+
+`HAVING` is covered in depth in the next chapter.
+
+## Common Mistakes
+
+### Mistake 1 — Forgetting GROUP BY
+
+```sql
+SELECT department, COUNT(*)
+FROM employees;     -- ❌ with ONLY_FULL_GROUP_BY
+```
+
+With `ONLY_FULL_GROUP_BY` enabled (MySQL 5.7+ default), this is rejected: `department` is a non-aggregated column next to the aggregate `COUNT(*)`. Correct:
+
+```sql
+SELECT department, COUNT(*)
+FROM employees
+GROUP BY department;
+```
+
+### Mistake 2 — Selecting Non-Grouped Columns
+
+```sql
+SELECT department, name, COUNT(*)
+FROM employees
+GROUP BY department;     -- ❌
+```
+
+The IT group contains John **and** David — which `name` should MySQL return? The query doesn't say. With `ONLY_FULL_GROUP_BY`, MySQL rejects such ambiguous queries unless the column is **functionally dependent** on the grouped columns (e.g. grouped by the primary key).
+
+> [!TIP]
+> For interviews: every selected non-aggregated column should normally be in the `GROUP BY`.
+
+### Mistake 3 — Using WHERE with Aggregate Functions
+
+```sql
+SELECT department, COUNT(*)
+FROM employees
+WHERE COUNT(*) > 2          -- ❌
+GROUP BY department;
+```
+
+`WHERE` runs **before** `GROUP BY`, when `COUNT(*)` hasn't been evaluated per group yet. Use `HAVING`:
+
+```sql
+SELECT department, COUNT(*) AS employee_count
+FROM employees
+GROUP BY department
+HAVING COUNT(*) > 2;
+```
+
+### Mistake 4 — Confusing COUNT(*) and COUNT(column)
+
+`COUNT(*)` counts rows; `COUNT(column)` counts non-`NULL` values. They can return different results.
+
+### Mistake 5 — Forgetting That AVG() Ignores NULL
+
+With salaries 10000, 20000 and `NULL`, `AVG(salary)` returns **15000**, not 10000.
+
+## Interview Questions
+
+### Q1. Count employees in every department.
+
+```sql
+SELECT department, COUNT(*) AS employee_count
+FROM employees
+GROUP BY department;
+```
+
+### Q2. Find the highest salary in each department.
+
+```sql
+SELECT department, MAX(salary) AS highest_salary
+FROM employees
+GROUP BY department;
+```
+
+### Q3. Find total revenue per product.
+
+```sql
+SELECT product_id, SUM(price * quantity) AS total_revenue
+FROM sales
+GROUP BY product_id;
+```
+
+### Q4. Find the number of orders placed by each customer.
+
+```sql
+SELECT customer_id, COUNT(*) AS order_count
+FROM orders
+GROUP BY customer_id;
+```
+
+### Q5. Find the average order amount per customer.
+
+```sql
+SELECT customer_id, AVG(total_amount) AS average_order_amount
+FROM orders
+GROUP BY customer_id;
+```
+
+### Q6. What is the difference between WHERE and HAVING?
+
+`WHERE` filters rows **before** grouping; `HAVING` filters groups **after** grouping.
+
+### Q7. What is the difference between COUNT(*) and COUNT(column)?
+
+`COUNT(*)` counts rows; `COUNT(column)` counts non-`NULL` values in that column.
+
+### Q8. Can GROUP BY use multiple columns?
+
+Yes — `GROUP BY department, gender`; each unique combination becomes a separate group.
+
+## Mini Project
+
+| Order ID | Customer | Product | Amount |
+| --- | --- | --- | --- |
+| 1 | A | Laptop | 50000 |
+| 2 | A | Mouse | 1000 |
+| 3 | B | Laptop | 50000 |
+| 4 | C | Keyboard | 2000 |
+| 5 | B | Mouse | 1000 |
+| 6 | A | Keyboard | 2000 |
+
+```sql
+-- 1. Total amount spent by each customer → A 53000, B 51000, C 2000
+SELECT customer, SUM(amount) AS total_spent
+FROM orders
+GROUP BY customer;
+
+-- 2. Number of orders for each product → Laptop 2, Mouse 2, Keyboard 2
+SELECT product, COUNT(*) AS order_count
+FROM orders
+GROUP BY product;
+
+-- 3. Total revenue for each product → Laptop 100000, Mouse 2000, Keyboard 4000
+SELECT product, SUM(amount) AS total_revenue
+FROM orders
+GROUP BY product;
+
+-- 4. Average order amount per customer
+SELECT customer, AVG(amount) AS average_order_amount
+FROM orders
+GROUP BY customer;
+
+-- 5. Highest order amount placed by each customer
+SELECT customer, MAX(amount) AS highest_order_amount
+FROM orders
+GROUP BY customer;
+
+-- 6. Number of orders placed by each customer
+SELECT customer, COUNT(*) AS order_count
+FROM orders
+GROUP BY customer;
+```
+
+## Practice Problems
+
+**Easy**
+
+1. Count employees in each department.
+2. Find the average salary per department.
+3. Find the highest salary per department.
+4. Find the lowest salary per department.
+5. Find the total salary paid in each department.
+
+**Medium**
+
+6. Count orders placed by each customer.
+7. Calculate total sales for each product.
+8. Find the average product price by category.
+9. Find monthly revenue using `YEAR(order_date)` and `MONTH(order_date)`.
+10. Find the total quantity sold for each product.
+
+```sql
+SELECT YEAR(order_date)  AS order_year,
+       MONTH(order_date) AS order_month,
+       SUM(total_amount) AS monthly_revenue
+FROM orders
+GROUP BY YEAR(order_date), MONTH(order_date);
+```
+
+Including the **year** prevents January of different years from being grouped together.
+
+**Interview level**
+
+1. Find the top 3 departments by total salary.
+2. Find the customer with the highest total spending.
+3. Find the product generating the highest revenue.
+4. Find the department with the highest average salary.
+5. Generate a dashboard showing `COUNT`, `SUM`, `AVG`, `MIN` and `MAX` for each department.
+
+## Real Backend Example
+
+A Spring Boot API exposes `GET /api/dashboard/sales`, needing total orders, total revenue, and average/minimum/maximum order value:
+
+```sql
+SELECT COUNT(*)          AS total_orders,
+       SUM(total_amount) AS total_revenue,
+       AVG(total_amount) AS average_order_value,
+       MIN(total_amount) AS minimum_order_value,
+       MAX(total_amount) AS maximum_order_value
+FROM orders;
+```
+
+Customer-wise statistics:
+
+```sql
+SELECT customer_id,
+       COUNT(*)          AS total_orders,
+       SUM(total_amount) AS total_spent,
+       AVG(total_amount) AS average_order_value
+FROM orders
+GROUP BY customer_id;
+```
+
+This is the foundation of SQL-based reporting APIs.
+
+## Cheat Sheet
+
+| Expression | Meaning |
+| --- | --- |
+| `COUNT(*)` | Counts rows |
+| `COUNT(column)` | Counts non-`NULL` values |
+| `COUNT(DISTINCT column)` | Counts unique non-`NULL` values |
+| `SUM(salary)` | Total |
+| `AVG(salary)` | Average of non-`NULL` values |
+| `MIN(salary)` / `MAX(salary)` | Lowest / highest value |
+| `GROUP BY department, gender` | One group per unique combination |
+
+**Interview tips:**
+
+- ✅ `GROUP BY` creates groups; aggregate functions calculate a value for each group.
+- ✅ Master all five aggregates: `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`.
+- ✅ Understand `COUNT(*)` vs `COUNT(column)` and how aggregates handle `NULL`.
+- ✅ `WHERE` filters rows before grouping; `HAVING` filters groups after aggregation.
+- ✅ Don't select arbitrary non-grouped columns.
+- ✅ Include the year when grouping by month across multiple years.
