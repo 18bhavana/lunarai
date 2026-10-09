@@ -41,7 +41,7 @@ function parseFrontMatter(src) {
   const meta = {};
   for (const line of m[1].split(/\r?\n/)) {
     const i = line.indexOf(':');
-    if (i > 0) meta[line.slice(0, i).trim()] = line.slice(i + 1).trim();
+    if (i > 0) meta[line.slice(0, i).trim()] = line.slice(i + 1).trim().replace(/^"(.*)"$/, '$1');
   }
   return { meta, body: src.slice(m[0].length) };
 }
@@ -75,8 +75,43 @@ const JAVA_KEYWORDS = new Set(('abstract assert boolean break byte case catch ch
   'package private protected public return short static strictfp super switch synchronized this throw throws ' +
   'transient try void volatile while var record sealed permits non-sealed yield true false null').split(' '));
 
+const SQL_KEYWORDS = new Set(('select from where and or not in is null like between exists distinct as on join inner left right ' +
+  'full outer cross natural using group by having order asc desc limit offset union all intersect except insert into values ' +
+  'update set delete create alter drop truncate rename table database schema view index unique primary foreign key references ' +
+  'constraint check default auto_increment if case when then else end with recursive over partition rows range preceding ' +
+  'following unbounded current row begin commit rollback savepoint transaction start isolation level read write committed ' +
+  'uncommitted repeatable serializable lock for share procedure function returns return declare call trigger each before ' +
+  'after cascade restrict no action add column modify change engine charset collate replace ignore duplicate explain analyze ' +
+  'show describe use grant revoke true false unsigned signed deterministic sql security definer invoker materialized ' +
+  'temporary leave loop while repeat until do iterate open close fetch cursor handler continue exit condition signal ' +
+  'interval div mod regexp rlike escape any some window lateral generated always virtual stored fulltext spatial ' +
+  'int integer bigint smallint tinyint mediumint decimal numeric float double real bit boolean bool char varchar text ' +
+  'tinytext mediumtext longtext blob binary varbinary enum json date datetime timestamp time year').split(' '));
+
+function highlightSql(code) {
+  const re = /(--[^\n]*|#[^\n]*|\/\*[\s\S]*?\*\/)|('(?:''|\\.|[^'\\])*'|"(?:\\.|[^"\\\n])*")|(`[^`\n]*`)|(\b\d+(?:\.\d+)?\b)|(\b[A-Za-z_][\w$]*\b)/g;
+  let out = '', last = 0, m;
+  while ((m = re.exec(code))) {
+    out += esc(code.slice(last, m.index));
+    const [tok] = m;
+    let cls = '';
+    if (m[1]) cls = 'c';
+    else if (m[2]) cls = 's';
+    else if (m[3]) cls = 't';
+    else if (m[4]) cls = 'n';
+    else if (m[5]) {
+      if (SQL_KEYWORDS.has(tok.toLowerCase())) cls = 'k';
+      else if (/^\s*\(/.test(code.slice(re.lastIndex))) cls = 'f';
+    }
+    out += cls ? `<span class="tk-${cls}">${esc(tok)}</span>` : esc(tok);
+    last = re.lastIndex;
+  }
+  return out + esc(code.slice(last));
+}
+
 function highlight(code, lang) {
-  if (!['java', 'json', 'js', 'javascript', 'sql'].includes(lang)) return esc(code);
+  if (lang === 'sql' || lang === 'mysql') return highlightSql(code);
+  if (!['java', 'json', 'js', 'javascript'].includes(lang)) return esc(code);
   const re = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\\n])*")|('(?:\\.|[^'\\\n])')|(@[A-Za-z_]\w*)|(\b\d[\d_]*(?:\.\d+)?[lLfFdD]?\b)|(\bnon-sealed\b|\b[A-Za-z_$][\w$]*\b)/g;
   let out = '', last = 0, m;
   while ((m = re.exec(code))) {
@@ -287,6 +322,24 @@ function parseBlocks(md) {
 
 const CALLOUT_LABEL = { TIP: 'Tip', NOTE: 'Note', WARNING: 'Watch out', IMPORTANT: 'Important', QUESTION: 'Interview question' };
 
+// Callout body: consecutive lines join with <br>, blank lines start a new paragraph,
+// and "- " lines become a bullet list.
+function calloutBody(lines) {
+  const parts = [];
+  let para = [];
+  let list = [];
+  const flushPara = () => { if (para.length) parts.push(para.map((l) => inline(l)).join('<br>')); para = []; };
+  const flushList = () => { if (list.length) parts.push(`<ul>${list.map((l) => `<li>${inline(l)}</li>`).join('')}</ul>`); list = []; };
+  for (const l of lines) {
+    const item = l.match(/^\s*[-*]\s+(.*)$/);
+    if (item) { flushPara(); list.push(item[1]); }
+    else if (!l.trim()) { flushPara(); flushList(); }
+    else { flushList(); para.push(l); }
+  }
+  flushPara(); flushList();
+  return parts.map((p) => (p.startsWith('<ul>') ? p : `<p>${p}</p>`)).join('');
+}
+
 function renderBlock(b) {
   switch (b.type) {
     case 'p': return `<p>${inline(b.text)}</p>`;
@@ -310,7 +363,7 @@ function renderBlock(b) {
       if (m) {
         const type = m[1].toUpperCase();
         const title = m[2] ? inline(m[2]) : CALLOUT_LABEL[type] || type;
-        const body = b.body.slice(1).filter((l) => l.trim()).map((l) => inline(l)).join('<br>');
+        const body = calloutBody(b.body.slice(1));
         return `<aside class="callout callout-${type.toLowerCase()}"><div class="callout-title">` +
           `<span class="callout-kind">${CALLOUT_LABEL[type] || type}</span>${m[2] ? `<strong>${title}</strong>` : ''}</div>` +
           (body ? `<div class="callout-body">${body}</div>` : '') + `</aside>`;
@@ -375,7 +428,7 @@ function renderChapter(md) {
       body = sec.blocks.map(renderBlock).join('');
     }
     const hasCode = sec.blocks.some((b) => b.type === 'fence' && ['java', 'json', 'sql'].includes(b.lang.toLowerCase()));
-    if (hasCode) examples += sec.blocks.filter((b) => b.type === 'fence' && b.lang.toLowerCase() === 'java').length;
+    if (hasCode) examples += sec.blocks.filter((b) => b.type === 'fence' && ['java', 'sql'].includes(b.lang.toLowerCase())).length;
     questions += sec.blocks.filter((b) => b.type === 'quote' && /^\[!QUESTION\]/i.test(b.body[0])).length;
     const extra = /common mistakes/i.test(sec.title) ? ' is-mistakes' : /best practices|advantages/i.test(sec.title) ? ' is-best' : '';
     sec.hasCode = hasCode;
