@@ -95,8 +95,8 @@
         {
           "id": "spring-boot",
           "name": "Spring Boot",
-          "description": "Auto-configuration, starters, REST APIs, profiles.",
-          "status": "soon"
+          "description": "Spring Boot annotations and internals: stereotypes, Spring MVC request handling, request/response binding, exception handling, validation, dependency injection, bean lifecycle, AOP, security, auto-configuration, Actuator, microservices, performance and configuration properties.",
+          "status": "live"
         }
       ]
     },
@@ -120,9 +120,9 @@
       "topics": [
         {
           "id": "sql",
-          "name": "SQL",
-          "description": "Joins, indexes, query tuning, transactions.",
-          "status": "soon"
+          "name": "SQL & MySQL",
+          "description": "MySQL for backend developers: fundamentals and architecture, CRUD, filtering, functions, NULLs, transactions and ACID, every kind of JOIN, grouping, subqueries, CTEs, window functions, keys and constraints, normalization, indexes, views, stored procedures, set operators and performance tuning.",
+          "status": "live"
         }
       ]
     },
