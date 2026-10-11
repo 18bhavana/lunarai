@@ -507,6 +507,9 @@ function build() {
     siteUrl: siteUrl(site),
     contactEmail: site.contactEmail || 'the email address shown on our Contact page (coming soon)',
     chapterCount: String(chapterCount),
+    analytics: goatCounterUrl(site)
+      ? `We use **GoatCounter**, a privacy-friendly analytics service, to count page views (which pages are read, the referring site, browser, screen size and approximate country). GoatCounter does not use cookies, does not track you across websites and does not store your IP address. See [GoatCounter's privacy policy](https://www.goatcounter.com/help/privacy).`
+      : '',
   };
   const fill = (s) => s.replace(/\{\{(\w+)\}\}/g, (m, k) => (k in vars ? vars[k] : m));
   catalog.pages = [];
@@ -533,6 +536,7 @@ function build() {
   console.log(`Pre-rendered ${pages} HTML page(s), sitemap.xml, robots.txt${site.adsenseClient ? ', ads.txt' : ''} and 404.html`);
   if (!site.url) console.warn('  ⚠ site.url is not set in content/catalog.json — canonical URLs and the sitemap use a placeholder.');
   if (!site.contactEmail) console.warn('  ⚠ site.contactEmail is not set — the Contact and Privacy pages show a placeholder.');
+  if (!goatCounterUrl(site)) console.warn('  ℹ site.goatcounter is empty — no GoatCounter analytics added yet.');
   if (!site.adsenseClient) console.warn('  ℹ site.adsenseClient is empty — no AdSense script or ads.txt generated yet.');
 }
 
@@ -542,6 +546,13 @@ const SITE_DIR = path.join(ROOT, 'site');
 const TEMPLATE = path.join(ROOT, 'templates', 'page.html');
 const siteUrl = (site) => (site.url || 'https://example.com').replace(/\/+$/, '');
 const href = (p) => (p ? `/${p}/` : '/');
+// "lunarai" or "https://lunarai.goatcounter.com" → "https://lunarai.goatcounter.com/count"
+function goatCounterUrl(site) {
+  const g = (site.goatcounter || '').trim().replace(/\/+$/, '');
+  if (!g) return '';
+  if (/^https?:\/\//.test(g)) return /\/count$/.test(g) ? g : g + '/count';
+  return `https://${g}.goatcounter.com/count`;
+}
 const pad2 = (n) => String(n).padStart(2, '0');
 
 function prerender(catalog, chapterHtml, pageHtml) {
@@ -569,6 +580,9 @@ function prerender(catalog, chapterHtml, pageHtml) {
 
   const headExtra = [];
   if (site.googleSiteVerification) headExtra.push(`  <meta name="google-site-verification" content="${esc(site.googleSiteVerification)}">`);
+  if (goatCounterUrl(site)) {
+    headExtra.push(`  <script data-goatcounter="${esc(goatCounterUrl(site))}" async src="https://gc.zgo.at/count.js"></script>`);
+  }
   if (site.adsenseClient) {
     headExtra.push(`  <meta name="google-adsense-account" content="${esc(site.adsenseClient)}">`);
     headExtra.push(`  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(site.adsenseClient)}" crossorigin="anonymous"></script>`);

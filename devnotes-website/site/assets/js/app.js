@@ -96,10 +96,23 @@
   let filter = 'all';
   let cleanup = [];
 
+  // GoatCounter counts the first page load itself; in-app navigation is reported here.
+  let lastCounted = location.pathname;
+  function countPageView() {
+    if (location.pathname === lastCounted) return;
+    lastCounted = location.pathname;
+    const gc = window.goatcounter;
+    if (gc && typeof gc.count === 'function') {
+      // Title is read after the new view has rendered.
+      setTimeout(() => gc.count({ path: location.pathname, title: document.title, event: false }), 0);
+    }
+  }
+
   function navigate(href, replace) {
     history[replace ? 'replaceState' : 'pushState'](null, '', href);
     route();
     if (!location.hash && !replace) window.scrollTo({ top: 0, behavior: 'instant' });
+    if (!replace) countPageView();
   }
 
   function route() {
@@ -164,7 +177,7 @@
     }
     navigate(url.pathname + url.hash);
   });
-  addEventListener('popstate', route);
+  addEventListener('popstate', () => { route(); countPageView(); });
 
   const SUPPORT = SITE.support && SITE.support.upi ? SITE.support : null;
   // UPI deep link; no amount means the payer types any amount in their app.

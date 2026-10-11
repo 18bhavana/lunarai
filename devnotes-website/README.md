@@ -38,6 +38,7 @@ server — double-clicking `site/index.html` no longer works.)
 | `contactEmail` | Shown on the Contact, Privacy and Terms pages (AdSense needs a way to contact you) |
 | `adsenseClient` | Your AdSense publisher ID, e.g. `ca-pub-1234567890123456` — adds the AdSense script to every page and generates `ads.txt` |
 | `googleSiteVerification` | The `content` value of Search Console's HTML-tag verification |
+| `goatcounter` | Your GoatCounter site code (`lunarai` for `https://lunarai.goatcounter.com`) — adds cookie-free page-view analytics to every page, counts in-app page changes, and adds a GoatCounter paragraph to the Privacy Policy |
 | `ogImage` | Optional 1200×630 PNG (e.g. `assets/img/og-image.png`) for link previews on WhatsApp, LinkedIn, X |
 | `support` | UPI donation settings (UPI ID, payee name, suggested amounts, QR image) |
 

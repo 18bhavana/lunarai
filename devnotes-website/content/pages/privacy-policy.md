@@ -24,6 +24,8 @@ Like most websites, our hosting provider may automatically record standard techn
 
 The site loads fonts from **Google Fonts**, which means your browser connects to Google's servers and shares your IP address with Google. See [Google's Privacy Policy](https://policies.google.com/privacy).
 
+{{analytics}}
+
 ## Advertising and cookies
 
 {{siteName}} uses **Google AdSense** to show advertisements. Google and its partners use cookies and similar technologies to serve and measure ads:
