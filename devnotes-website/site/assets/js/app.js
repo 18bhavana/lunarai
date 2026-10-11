@@ -361,12 +361,12 @@
     const html = `<div class="page support-page"><section class="support-hero">` +
       `<div class="eyebrow">Support ${esc(SITE.name)}</div>` +
       `<h1>Help keep learning free for the next person</h1>` +
-      `<p>Somewhere right now, a student is cramming for their first interview, or a developer is trying to finally understand how HashMap works at 1 a.m. ` +
-      `${esc(SITE.name)} exists for them — and maybe it was there for you, too.</p>` +
+      `<p>Kahin koi student hostel ke kamre mein placement ki taiyari kar raha hai. Kahin koi developer raat 1 baje finally samajh raha hai ki HashMap andar se kaise kaam karta hai. ` +
+      `${esc(SITE.name)} unke liye hai — aur shayad kabhi aapke liye bhi tha. 💜</p>` +
       `<p>There are no ads, no paywalls and no sign-ups — just ${chapters} chapters of notes, put together and checked over many evenings, and kept free by readers who chip in what they can. ` +
       `If these notes have helped you, any amount — even ₹10 — makes a real difference.</p>${personal}</section>` +
       `<div class="support-impact" aria-label="What your support does">` +
-      `<div><b>₹29</b><span>A cup of chai that keeps a late-night writing session going</span></div>` +
+      `<div><b>₹29</b><span>Ek cutting chai ☕ — late-night writing sessions ka sahara</span></div>` +
       `<div><b>₹99</b><span>Helps cover hosting so the site stays fast and ad-free</span></div>` +
       `<div><b>₹199+</b><span>Helps fund a whole new topic — like Spring Data JPA or Microservices</span></div></div>` +
       `<div class="support-grid"><div class="support-box">` +
@@ -385,7 +385,7 @@
       `<div class="support-box support-other"><h2>Other ways to help</h2><ul>` +
       `<li>Share ${esc(SITE.name)} with a friend who's preparing for interviews.</li>` +
       `<li>Spotted a mistake or want a topic covered? Let us know.</li></ul></div>` +
-      `<p class="support-thanks">Whether you contribute or not, thank you for learning here. We hope the notes help you land that role. 💜</p>` +
+      `<p class="support-thanks">${SUPPORT_BLESSING}</p>` +
       `<p class="support-fine">Payments go directly to the UPI ID above. Contributions are voluntary, give no extra access, and are not refundable or tax-deductible. Thank you! 💜</p>` +
       `</div>${footerHtml()}`;
     setView('support', null, html, 'Support');
@@ -406,23 +406,54 @@
     input.addEventListener('input', () => setAmount(input.value.trim(), false));
     $('#copyUpi').addEventListener('click', () => copyText(SUPPORT.upi).then(() => toast('UPI ID copied')));
     // We can't see whether the payment went through, so the thank-you is for the intention.
-    pay.addEventListener('click', () => setTimeout(() => toast('Thank you for supporting DevNotes 💜'), 400));
+    pay.addEventListener('click', () => setTimeout(() => toast('Dil se shukriya! 🙏 Thank you for supporting DevNotes 💜'), 400));
   }
 
   // Rotating, honest end-of-chapter messages. The variant is picked per chapter so it stays stable on revisits.
   const SUPPORT_CARD_LINES = [
-    ['Did this chapter make something click?', 'That moment is why these notes exist. If you’d like to keep them free for the next person, any amount helps — even ₹10.'],
-    ['Preparing for an interview?', 'We’re rooting for you. If these notes saved you a few hours, a small contribution keeps them free, ad-free and growing.'],
-    ['Somewhere, someone is learning this tonight.', 'Your support — whatever you can spare — helps keep it free for them too.'],
-    ['No paywall. No ads. No sign-up.', 'Just notes, kept free by readers who chip in what they can. If that’s you, thank you 💜'],
-    ['Learning is better when it’s shared.', 'If DevNotes has helped you, you can pay it forward with any amount. It all goes into new topics.'],
+    ['Concept clear hua? 😊', 'Wahi “aha!” moment ke liye yeh notes bane hain. If you’d like to keep them free for the next student, any amount helps — even ₹10.'],
+    ['Interview ki taiyari chal rahi hai? All the best! 🙏', 'Hum aapke saath hain. If these notes saved you a few hours, a small contribution keeps them free, ad-free and growing.'],
+    ['Kahin koi raat ko 1 baje yahi padh raha hai. 🌙', 'Hostel mein, PG mein, ya ghar pe — aapka chhota sa support uske liye bhi notes free rakhta hai.'],
+    ['Na ads, na paywall, na sign-up.', 'Bas notes — readers ke pyaar aur support se chalte hain. If that’s you, dil se thank you 💜'],
+    ['Gyaan baantne se badhta hai. 📚', 'If DevNotes has helped you, pay it forward with any amount. Sab naye topics mein jaata hai.'],
+    ['Ghar walon ka sapna, aapki mehnat. 💪', 'Jab woh offer letter aaye, toh yaad rakhna yeh safar kahan se shuru hua. Support DevNotes — koi minimum nahi.'],
+    ['Guru dakshina, apni marzi se. 🙏', 'Purane zamaane mein shishya apne guru ko jo de sake, wohi dete the. ₹10 ho ya ₹500 — har yogdaan keemti hai.'],
   ];
+
+  // Short mid-chapter one-liners, shown between two sections halfway through a chapter.
+  const SUPPORT_ONE_LINERS = [
+    'Aadha chapter ho gaya — bas thoda aur! 💪 If DevNotes is helping, you can keep it free for the next learner with any amount.',
+    'Ek cutting chai ke paise mein, kisi aur ki padhai free rehti hai. ☕ Even ₹10 helps.',
+    'Placement season ka pressure samajh sakte hain. All the best! 🙏 A small contribution keeps these notes growing.',
+    'Jo seekha hai, wohi aage badhta hai. If this chapter helped, pay it forward for the next student. 💜',
+    'Interview clear ho jaaye, toh hamein bhi yaad karna! 😊 Support DevNotes with any amount you like.',
+    'Free notes, no ads, no paywall — sab readers ke support se chalta hai. Thank you! 🙏',
+    'Guru dakshina in any amount — ₹10 or ₹100 — keeps this guru going. 🙏',
+    'Pehli salary aaye toh ek chai DevNotes ke naam? ☕ Or chip in today — no minimum.',
+  ];
+
+  function insertMidChapterNote(chapterIdx) {
+    if (!SUPPORT) return;
+    const sections = $$('#content > .note-section');
+    if (sections.length < 4) return;
+    const mid = sections[Math.floor(sections.length / 2) - 1];
+    const note = document.createElement('aside');
+    note.className = 'support-inline';
+    note.setAttribute('aria-label', 'A message from DevNotes');
+    note.innerHTML = `<div class="si-ornament" aria-hidden="true"><span></span>🪔<span></span></div>` +
+      `<p class="si-blessing">${SUPPORT_BLESSING}</p>` +
+      `<p class="si-line">${esc(SUPPORT_ONE_LINERS[chapterIdx % SUPPORT_ONE_LINERS.length])}</p>` +
+      `<a class="si-btn" href="#/support">💜 Support DevNotes</a>`;
+    mid.after(note);
+  }
+
+  const SUPPORT_BLESSING = 'Aap support karein ya na karein — yahan padhne ke liye dil se shukriya. Bhagwan kare aapko woh dream job mile. 🙏💜';
 
   function supportCardHtml(chapterIdx) {
     if (!SUPPORT) return '';
     const readCount = readSet().size;
     const [title, body] = readCount >= 3 && chapterIdx % 2 === 0
-      ? [`You’ve read ${readCount} chapters here 🌱`, 'That’s real progress. If DevNotes has been part of your journey, you can help keep it free for the next learner — any amount, no minimum.']
+      ? [`Wah! ${readCount} chapters ho gaye 🌱`, 'Yeh asli mehnat hai — proud of you! If DevNotes has been part of your journey, help keep it free for the next learner — any amount, no minimum.']
       : SUPPORT_CARD_LINES[chapterIdx % SUPPORT_CARD_LINES.length];
     return `<aside class="support-card"><div><b>${esc(title)}</b><span>${esc(body)}</span></div><a class="btn" href="#/support">💜 Support</a></aside>`;
   }
@@ -435,10 +466,10 @@
     wrap.className = 'support-modal';
     wrap.innerHTML = `<div class="support-dialog" role="dialog" aria-modal="true" aria-labelledby="supportTitle">` +
       `<div class="support-emoji" aria-hidden="true">🎉</div><h2 id="supportTitle">You finished ${esc(topic.name)}!</h2>` +
-      `<p>All ${topic.chapters.length} chapters — that takes real commitment, and you should be proud of it.</p>` +
-      `<p>If these notes helped you get here, would you consider giving back? Whatever you can spare — ₹10, ₹50, anything — keeps ${esc(SITE.name)} free for the next person who’s just starting out, the way it was for you.</p>` +
-      `<div class="support-actions"><a class="btn btn-primary" href="#/support">💜 Pay it forward</a><button type="button" class="btn" data-close>Maybe later</button></div>` +
-      `<p class="support-small">Either way — congratulations, and good luck with what’s next.</p></div>`;
+      `<p>Saare ${topic.chapters.length} chapters! Yeh asli mehnat hai — aapke ghar wale bhi proud honge. 🙌</p>` +
+      `<p>Agar in notes ne aapki madad ki, toh thoda sa aage badhayein? ₹10, ₹50, jo bhi dil kare — taaki kisi aur student ko bhi yeh free mile, jaise aapko mila.</p>` +
+      `<div class="support-actions"><a class="btn btn-primary" href="#/support">💜 Guru dakshina dein</a><button type="button" class="btn" data-close>Baad mein</button></div>` +
+      `<p class="support-small">Jo bhi ho — bahut bahut badhai, aur aage ke liye all the best! 🎉</p></div>`;
     const close = () => { wrap.remove(); removeEventListener('keydown', onKey); };
     const onKey = (e) => { if (e.key === 'Escape') close(); };
     wrap.addEventListener('click', (e) => { if (e.target === wrap || e.target.closest('[data-close]') || e.target.closest('a')) close(); });
@@ -493,6 +524,7 @@
     loadChapter(key).then((data) => {
       if (current.key !== key) return;
       $('#content').innerHTML = data.html;
+      insertMidChapterNote(idx);
       const tocHtml = data.toc.map((s, i) => `<a class="toc-link" href="#/${key}?s=${s.id}" data-id="${s.id}">${i + 1}. ${esc(s.title)}${s.kind === 'interview' ? '<span class="k">Q&amp;A</span>' : ''}</a>`).join('');
       $('#tocLinks').innerHTML = tocHtml;
       $('#mobileToc').innerHTML = tocHtml;
@@ -513,6 +545,7 @@
       el.hidden = !ok;
       if (ok) shown++;
     });
+    $$('.support-inline').forEach((el) => { el.hidden = filter !== 'all'; });
     let empty = $('#filterEmpty');
     if (!shown) {
       if (!empty) { empty = document.createElement('div'); empty.id = 'filterEmpty'; empty.className = 'filter-empty'; $('#content').appendChild(empty); }
