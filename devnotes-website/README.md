@@ -27,21 +27,59 @@ devnotes-website/
 npm run dev
 ```
 
-Then open http://localhost:5173. You can also just double-click `site/index.html`.
+Then open http://localhost:5173. (Pages use real paths now, so open the site through the preview
+server — double-clicking `site/index.html` no longer works.)
+
+## Site settings (`content/catalog.json` → `"site"`)
+
+| Setting | What it does |
+| --- | --- |
+| `url` | Your live address, e.g. `https://devnotes.in` — used for canonical URLs, the sitemap and robots.txt |
+| `contactEmail` | Shown on the Contact, Privacy and Terms pages (AdSense needs a way to contact you) |
+| `adsenseClient` | Your AdSense publisher ID, e.g. `ca-pub-1234567890123456` — adds the AdSense script to every page and generates `ads.txt` |
+| `googleSiteVerification` | The `content` value of Search Console's HTML-tag verification |
+| `ogImage` | Optional 1200×630 PNG (e.g. `assets/img/og-image.png`) for link previews on WhatsApp, LinkedIn, X |
+| `support` | UPI donation settings (UPI ID, payee name, suggested amounts, QR image) |
+
+Run `npm run build` after changing any of them.
+
+## What the build generates
+
+`build.js` writes, into `site/`:
+
+- `data/` — chapter data, search index and catalog for the app;
+- a pre-rendered **`index.html` for every page** (`/java/collections/hashmap/` …) with the full chapter text,
+  title, description, canonical URL and structured data, so Google and AdSense reviewers see real content;
+- `sitemap.xml`, `robots.txt`, `404.html`, and `ads.txt` (once `adsenseClient` is set);
+- static pages from `content/pages/*.md` — About, Contact, Privacy Policy, Terms & Disclaimer.
+
+The page layout for all of these is `templates/page.html`.
 
 ## Upload / host
 
-Upload the **contents of `site/`** to any static host. There is no server code.
+Upload the **contents of `site/`** to the **root of your domain**. There is no server code, but the host must
+serve `/some/path/` from `/some/path/index.html` (all of the hosts below do this) and use `404.html` for missing pages.
 
 | Host | How |
 | --- | --- |
+| **Firebase Hosting (Google)** | `npm i -g firebase-tools` → `firebase login` → `firebase init hosting` (keep the existing `firebase.json`, public dir `site`) → `firebase deploy`. Then Hosting → *Add custom domain* |
 | **Netlify** | Drag the `site` folder onto app.netlify.com/drop |
-| **GitHub Pages** | Push the repo, then Settings → Pages → deploy from the `site` folder (or copy `site/` contents to the repo root / `docs/`) |
-| **Vercel** | `vercel deploy site` |
 | **Cloudflare Pages** | Create project → upload `site/` |
+| **Vercel** | `vercel deploy site` |
 | **cPanel / shared hosting** | Upload the contents of `site/` into `public_html` |
 
-URLs use `#/` routes (e.g. `/#/java/core-java/records`), so they work on every host with no rewrite rules.
+`firebase.json` already sets clean URLs, caching headers and a 301 redirect for the old Design Patterns URLs.
+Old `/#/...` links from before the switch to real paths are redirected automatically by the app.
+
+## Google Search Console and AdSense checklist
+
+1. **Use your own domain** (e.g. `devnotes.in`) and set `site.url`. AdSense doesn't accept free subdomains like `*.web.app` or `*.netlify.app` as the site to review.
+2. Set `site.contactEmail`, run `npm run build`, and deploy.
+3. **Search Console** → add the domain → verify (DNS record, or HTML tag via `googleSiteVerification`) → *Sitemaps* → submit `https://your-domain/sitemap.xml`.
+4. Wait until pages show as indexed (often 1–4 weeks).
+5. **AdSense** → sign up with the site URL → copy your `ca-pub-…` ID into `site.adsenseClient` → build and deploy (adds the AdSense code and `ads.txt`) → click *Verify* / *Request review* in AdSense.
+6. In AdSense → **Privacy & messaging**, turn on the **European regulations (GDPR) consent message** — Google requires a certified consent banner for visitors from the EEA, UK and Switzerland.
+7. Review usually takes from a few days to a few weeks. Keep publishing in the meantime.
 
 ## Landing page and learning paths
 
@@ -54,7 +92,7 @@ mark chapters read, and topics that are still "soon" show greyed out in the rout
 
 1. Edit the `.md` file in `content/java/core-java/`.
 2. Run `npm run build` (or `node build.js`).
-3. Re-upload `site/` (only the `site/data/` folder changes).
+3. Re-upload `site/` (the chapter's `index.html` page and `site/data/` change).
 
 ## Add a new topic (e.g. Spring Boot)
 

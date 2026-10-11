@@ -27,6 +27,20 @@
     return s.has(key);
   }
 
+  // Topics that moved to a new URL: old prefix → new prefix (keeps old links and reading progress working).
+  const MOVED = { 'java/design-patterns': 'design-patterns/essential-patterns' };
+  const remap = (key) => {
+    for (const [from, to] of Object.entries(MOVED)) if (key === from || key.startsWith(from + '/')) return to + key.slice(from.length);
+    return key;
+  };
+  (function migrateStoredKeys() {
+    const read = store.get('read', []);
+    const moved = read.map(remap);
+    if (moved.some((k, i) => k !== read[i])) store.set('read', Array.from(new Set(moved)));
+    const last = store.get('last', null);
+    if (last && remap(last) !== last) store.set('last', remap(last));
+  })();
+
   // ------------------------------------------------------------ catalog helpers
   const chapterKey = (track, topic, ch) => `${track.id}/${topic.id}/${ch.slug}`;
   const findTrack = (id) => CATALOG.tracks.find((t) => t.id === id);
@@ -61,25 +75,43 @@
     if (loaded[key]) return Promise.resolve(loaded[key]);
     return new Promise((resolve, reject) => {
       (pending[key] = pending[key] || []).push(resolve);
-      loadScript(`data/${key}.js`).catch(reject);
+      loadScript(`/data/${key}.js`).catch(reject);
     });
   }
 
-  // ------------------------------------------------------------ routing
+  // ------------------------------------------------------------ routing (real paths; every page is also pre-rendered by build.js)
+  const u = (p) => (p ? `/${p}/` : '/');
+  const PAGES = CATALOG.pages || [];                 // static pages: about, contact, privacy-policy, terms
+  const findPage = (slug) => PAGES.find((p) => p.slug === slug);
+
   function parseRoute() {
-    const raw = location.hash.replace(/^#\/?/, '');
-    const [path, query = ''] = raw.split('?');
-    const parts = path.split('/').filter(Boolean).map(decodeURIComponent);
-    const params = new URLSearchParams(query);
-    return { parts, section: params.get('s') };
+    const parts = location.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+    const hash = location.hash.slice(1);
+    return { parts, section: hash && !hash.startsWith('/') ? decodeURIComponent(hash) : null };
   }
   const main = $('#main');
+  // HTML the build already rendered into this page — reused so the first view appears instantly.
+  const PRE = main.dataset.route != null ? { route: main.dataset.route, content: $('#content') ? $('#content').innerHTML : null } : null;
   let current = { view: null, key: null };
   let filter = 'all';
   let cleanup = [];
 
+  function navigate(href, replace) {
+    history[replace ? 'replaceState' : 'pushState'](null, '', href);
+    route();
+    if (!location.hash && !replace) window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
   function route() {
+    // Old "#/track/topic/chapter?s=section" links → "/track/topic/chapter/#section"
+    if (location.hash.startsWith('#/')) {
+      const [p, q = ''] = location.hash.slice(2).split('?');
+      const s = new URLSearchParams(q).get('s');
+      history.replaceState(null, '', u(p.split('/').filter(Boolean).join('/')) + (s ? `#${s}` : ''));
+    }
     const { parts, section } = parseRoute();
+    const path = parts.join('/');
+    if (remap(path) !== path) return navigate(u(remap(path)) + (section ? `#${section}` : ''), true);
     closeSidebar();
     closeSearch();
     if (parts.length >= 3) {
@@ -90,19 +122,49 @@
     cleanup.forEach((fn) => fn()); cleanup = [];
     setProgressBar(0);
     if (parts.length === 1 && parts[0] === 'support' && SUPPORT) return renderSupport();
+    if (parts.length === 1 && findPage(parts[0])) return renderStaticPage(findPage(parts[0]));
     if (parts.length === 2) return renderTopic(parts[0], parts[1]);
     if (parts.length === 1) return renderTrack(parts[0]);
-    return renderHome();
+    if (parts.length === 0) return renderHome();
+    return renderNotFound();
   }
 
-  function setView(view, key, html, title) {
+  function setMeta(name, value, attr = 'name') {
+    let el = document.head.querySelector(`meta[${attr}="${name}"]`);
+    if (!el) { el = document.createElement('meta'); el.setAttribute(attr, name); document.head.appendChild(el); }
+    el.setAttribute('content', value);
+  }
+  function setView(view, key, html, title, description) {
     current = { view, key };
     document.body.classList.toggle('view-home', view === 'home');
     main.innerHTML = html;
     document.title = title ? `${title} · ${SITE.name}` : `${SITE.name} — ${SITE.tagline || 'Tech notes'}`;
+    const desc = description || SITE.tagline || '';
+    setMeta('description', desc);
+    setMeta('og:title', document.title, 'property');
+    setMeta('og:description', desc, 'property');
+    const canonical = document.head.querySelector('link[rel="canonical"]');
+    if (canonical && SITE.url) canonical.href = SITE.url.replace(/\/$/, '') + location.pathname;
     renderNav();
     renderSidebar();
   }
+
+  // Same-origin links are handled in the app (no full page reload).
+  document.addEventListener('click', (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest('a[href]');
+    if (!a || a.target || a.hasAttribute('download')) return;
+    const url = new URL(a.href, location.href);
+    if (url.origin !== location.origin || /^\/(assets|data)\//.test(url.pathname) || /\.[a-z0-9]+$/i.test(url.pathname)) return;
+    e.preventDefault();
+    if (url.pathname === location.pathname && url.hash) {
+      history.replaceState(null, '', url.pathname + url.hash);
+      scrollToSection(decodeURIComponent(url.hash.slice(1)), true);
+      return;
+    }
+    navigate(url.pathname + url.hash);
+  });
+  addEventListener('popstate', route);
 
   const SUPPORT = SITE.support && SITE.support.upi ? SITE.support : null;
   // UPI deep link; no amount means the payer types any amount in their app.
@@ -112,7 +174,21 @@
     return `upi://pay?${q.join('&')}`;
   }
 
-  const footerHtml = () => `<footer class="site-footer"><span>${esc(SITE.name)} · Notes for learning and interview prep${SUPPORT ? ` · <a href="#/support">Support ${esc(SITE.name)}</a>` : ''}</span><span>Updated ${esc(CATALOG.builtAt || '')}</span></footer>`;
+  const footerHtml = () => `<footer class="site-footer"><span>© ${new Date().getFullYear()} ${esc(SITE.name)} · Notes for learning and interview prep</span>` +
+    `<nav class="footer-links" aria-label="Site">${PAGES.map((p) => `<a href="${u(p.slug)}">${esc(p.title)}</a>`).join('')}${SUPPORT ? `<a href="/support/">Support</a>` : ''}</nav>` +
+    `<span>Updated ${esc(CATALOG.builtAt || '')}</span></footer>`;
+
+  // About, Contact, Privacy Policy, Terms — content written in content/pages/*.md
+  function renderStaticPage(page) {
+    const key = `pages/${page.slug}`;
+    setView('page', key, `<div class="page legal-page"><article class="legal"><h1>${esc(page.title)}</h1>` +
+      `<p class="legal-updated">Last updated: ${esc(page.updated || CATALOG.builtAt || '')}</p>` +
+      `<div class="content" id="content">${PRE && PRE.route === key && PRE.content ? PRE.content : '<div class="skeleton"></div><div class="skeleton" style="width:80%"></div>'}</div></article></div>${footerHtml()}`,
+      page.title, page.description);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    loadChapter(key).then((data) => { if (current.key === key) $('#content').innerHTML = data.html; })
+      .catch(() => { $('#content').innerHTML = '<div class="filter-empty">Couldn\x27t load this page. Refresh to try again.</div>'; });
+  }
 
   // ------------------------------------------------------------ top nav + sidebar
   function activeIds() {
@@ -122,10 +198,10 @@
 
   function renderNav() {
     const a = activeIds();
-    $('#trackNav').innerHTML = `<a class="nav-link${!a.track ? ' active' : ''}" href="#/">Home</a>` +
+    $('#trackNav').innerHTML = `<a class="nav-link${!a.track ? ' active' : ''}" href="/">Home</a>` +
       CATALOG.tracks.map((t) => {
         const live = t.topics.some((tp) => tp.status === 'live');
-        return `<a class="nav-link${a.track === t.id ? ' active' : ''}" href="#/${t.id}">${esc(t.name)}${live ? '' : '<span class="soon-dot" title="Coming soon"></span>'}</a>`;
+        return `<a class="nav-link${a.track === t.id ? ' active' : ''}" href="${u(t.id)}">${esc(t.name)}${live ? '' : '<span class="soon-dot" title="Coming soon"></span>'}</a>`;
       }).join('');
   }
 
@@ -148,11 +224,11 @@
           html += `<div class="side-topic is-soon"><span>${esc(topic.name)}</span><span class="chip">Soon</span></div>`;
           continue;
         }
-        html += `<a class="side-topic" href="#/${track.id}/${topic.id}"><span>${esc(topic.name)}</span><span class="chip chip-live">${topic.chapters.length}</span></a>`;
+        html += `<a class="side-topic" href="${u(track.id + "/" + topic.id)}"><span>${esc(topic.name)}</span><span class="chip chip-live">${topic.chapters.length}</span></a>`;
         html += `<div class="side-chapters">` + topic.chapters.map((c, i) => {
           const key = chapterKey(track, topic, c);
           const active = a.track === track.id && a.topic === topic.id && a.slug === c.slug;
-          return `<a class="chapter-link${active ? ' active' : ''}" href="#/${key}"${active ? ' aria-current="page"' : ''}>` +
+          return `<a class="chapter-link${active ? ' active' : ''}" href="${u(key)}"${active ? ' aria-current="page"' : ''}>` +
             `<span class="num">${pad(i + 1)}</span><span>${esc(c.title)}</span>${s.has(key) ? '<span class="done-tick" title="Read">✓</span>' : ''}</a>`;
         }).join('') + `</div>`;
       }
@@ -171,7 +247,7 @@
   // ------------------------------------------------------------ cards
   function chapterCard(track, topic, c, i) {
     const key = chapterKey(track, topic, c);
-    return `<a class="chapter-card" href="#/${key}">` +
+    return `<a class="chapter-card" href="${u(key)}">` +
       `<div class="card-num"><span>CHAPTER ${pad(i + 1)}</span>${isRead(key) ? '<span class="done">✓ Read</span>' : ''}</div>` +
       `<h3>${esc(c.title)}</h3><p>${esc(c.subtitle)}</p>` +
       `<div class="card-foot"><span>${c.readMin} min · ${c.questions} Q&amp;A · ${c.examples} examples</span><span class="arrow" aria-hidden="true">→</span></div></a>`;
@@ -179,9 +255,9 @@
 
   function trackCard(track) {
     const rows = track.topics.map((tp) => tp.status === 'live' && tp.chapters && tp.chapters.length
-      ? `<a class="topic-row" href="#/${track.id}/${tp.id}"><span>${esc(tp.name)}</span><span class="chip chip-live">${tp.chapters.length} chapters</span></a>`
+      ? `<a class="topic-row" href="${u(track.id + "/" + tp.id)}"><span>${esc(tp.name)}</span><span class="chip chip-live">${tp.chapters.length} chapters</span></a>`
       : `<div class="topic-row is-soon"><span>${esc(tp.name)}</span><span class="chip">Soon</span></div>`).join('');
-    return `<div class="track-card"><h3><a href="#/${track.id}">${esc(track.name)}</a></h3><p>${esc(track.description || '')}</p>${rows}</div>`;
+    return `<div class="track-card"><h3><a href="${u(track.id)}">${esc(track.name)}</a></h3><p>${esc(track.description || '')}</p>${rows}</div>`;
   }
 
   // ------------------------------------------------------------ views
@@ -259,7 +335,7 @@
       `<div class="path-foot"><div class="path-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="${esc(path.name)} progress"><span style="width:${Math.max(pct, total ? 3 : 0)}%"></span></div>` +
       `<span class="chip">${steps.length} modules · ${liveSteps.length} live</span></div>` +
       `<div class="path-meta">${total ? `${done} / ${total} chapters read` : 'Coming soon'}</div>`;
-    return first ? `<a class="path-card" href="#/${first.track.id}/${first.topic.id}">${inner}</a>` : `<div class="path-card is-soon">${inner}</div>`;
+    return first ? `<a class="path-card" href="${u(first.track.id + "/" + first.topic.id)}">${inner}</a>` : `<div class="path-card is-soon">${inner}</div>`;
   }
 
   function renderHome() {
@@ -271,7 +347,7 @@
     const first = live[0];
     const last = store.get('last', null);
     const lastInfo = last && lookupKey(last);
-    const startHref = lastInfo ? `#/${last}` : first ? `#/${chapterKey(first.track, first.topic, first.topic.chapters[0])}` : '#/';
+    const startHref = lastInfo ? u(last) : first ? u(chapterKey(first.track, first.topic, first.topic.chapters[0])) : '/';
     const stat = (cls, ic, value, label) => `<div class="lstat"><span class="lstat-icon ${cls}">${icon(ic)}</span><div><b>${value}</b><span>${label}</span></div></div>`;
     let html = `<section class="landing-hero"><div class="landing-inner">` +
       `<div class="landing-copy"><span class="pill">${icon('spark', 15)} From Basics to Advanced</span>` +
@@ -279,7 +355,7 @@
       `<p>Structured notes, hands-on examples, real-world scenarios and interview questions to accelerate your learning journey.</p>` +
       `<div class="hero-actions"><a class="btn btn-hero" href="${startHref}">${lastInfo ? 'Continue learning' : 'Get Started'}</a>` +
       `<button class="btn btn-ghost" type="button" id="browseTopics">Browse Topics</button></div>` +
-      (lastInfo ? `<div class="hero-resume">Last read: <a href="#/${last}">${esc(lastInfo.chapter.title)}</a> · ${esc(lastInfo.topic.name)}</div>` : '') +
+      (lastInfo ? `<div class="hero-resume">Last read: <a href="${u(last)}">${esc(lastInfo.chapter.title)}</a> · ${esc(lastInfo.topic.name)}</div>` : '') +
       `</div><div class="landing-visual">${heroArt()}</div></div></section>` +
       `<div class="page landing-page"><div class="lstats">` +
       stat('si-orange', 'layers', `${CATALOG.tracks.length}`, 'Learning tracks') +
@@ -297,7 +373,7 @@
       const p = topicProgress(track, topic);
       const preview = topic.chapters.slice(0, 6);
       html += `<div class="section-head"><div><h2>${esc(topic.name)}</h2><p>${esc(topic.description || '')}</p></div>` +
-        `<a class="btn" href="#/${track.id}/${topic.id}">All ${topic.chapters.length} chapters${p.done ? ` · ${p.done} read` : ''} →</a></div>` +
+        `<a class="btn" href="${u(track.id + "/" + topic.id)}">All ${topic.chapters.length} chapters${p.done ? ` · ${p.done} read` : ''} →</a></div>` +
         `<div class="chapter-grid">${preview.map((c, i) => chapterCard(track, topic, c, i)).join('')}</div>`;
     }
     html += `</div>${footerHtml()}`;
@@ -314,11 +390,11 @@
       const live = tp.status === 'live' && tp.chapters && tp.chapters.length;
       const foot = live ? `<span>${tp.chapters.length} chapters · ${topicProgress(track, tp).done} read</span><span class="arrow" aria-hidden="true">→</span>` : '<span class="chip">Coming soon</span>';
       const inner = `<div class="card-num"><span>${esc(track.name.toUpperCase())}</span></div><h3>${esc(tp.name)}</h3><p>${esc(tp.description || '')}</p><div class="card-foot">${foot}</div>`;
-      return live ? `<a class="chapter-card" href="#/${track.id}/${tp.id}">${inner}</a>` : `<div class="chapter-card" style="opacity:.7">${inner}</div>`;
+      return live ? `<a class="chapter-card" href="${u(track.id + "/" + tp.id)}">${inner}</a>` : `<div class="chapter-card" style="opacity:.7">${inner}</div>`;
     };
     const html = `<div class="page"><section class="hero"><div class="eyebrow">Track</div><h1>${esc(track.name)}</h1><p>${esc(track.description || '')}</p></section>` +
       `<div style="height:28px"></div><div class="chapter-grid">${track.topics.map(topicCard).join('')}</div></div>${footerHtml()}`;
-    setView('track', null, html, track.name);
+    setView('track', null, html, track.name, track.description);
   }
 
   function renderTopic(trackId, topicId) {
@@ -326,21 +402,21 @@
     if (!topic) return renderNotFound();
     if (topic.status !== 'live' || !topic.chapters || !topic.chapters.length) {
       return setView('topic', null, `<div class="page"><div class="empty-state"><div class="eyebrow">${esc(track.name)}</div><h1>${esc(topic.name)} is coming soon</h1>` +
-        `<p>${esc(topic.description || '')}</p><a class="btn btn-primary" href="#/">Browse available notes</a></div></div>${footerHtml()}`, topic.name);
+        `<p>${esc(topic.description || '')}</p><a class="btn btn-primary" href="/">Browse available notes</a></div></div>${footerHtml()}`, topic.name);
     }
     const p = topicProgress(track, topic);
     const next = topic.chapters.find((c) => !isRead(chapterKey(track, topic, c))) || topic.chapters[0];
     const html = `<div class="page"><section class="hero"><div class="eyebrow">${esc(track.name)} · ${topic.chapters.length} chapters</div>` +
       `<h1>${esc(topic.name)} <span class="grad">Masterclass</span></h1><p>${esc(topic.description || '')}</p>` +
-      `<div class="hero-actions"><a class="btn btn-primary" href="#/${chapterKey(track, topic, next)}">${p.done ? 'Continue' : 'Start'}: ${esc(next.title)} →</a></div>` +
+      `<div class="hero-actions"><a class="btn btn-primary" href="${u(chapterKey(track, topic, next))}">${p.done ? 'Continue' : 'Start'}: ${esc(next.title)} →</a></div>` +
       `<div class="hero-progress"><div class="progress-top"><span>Your progress</span><b>${p.done} / ${p.total} read</b></div><div class="progress"><span style="width:${p.pct}%"></span></div></div></section>` +
       `<div style="height:30px"></div><div class="chapter-grid">${topic.chapters.map((c, i) => chapterCard(track, topic, c, i)).join('')}</div></div>${footerHtml()}`;
-    setView('topic', null, html, topic.name);
+    setView('topic', null, html, topic.name, topic.description);
   }
 
   function renderNotFound() {
     setView('404', null, `<div class="page"><div class="empty-state"><div class="eyebrow">404</div><h1>Page not found</h1><p>That note doesn't exist (yet). Try search, or head back home.</p>` +
-      `<a class="btn btn-primary" href="#/">Go home</a></div></div>${footerHtml()}`, 'Not found');
+      `<a class="btn btn-primary" href="/">Go home</a></div></div>${footerHtml()}`, 'Not found');
   }
 
   const TABS = [
@@ -379,7 +455,7 @@
       `<a class="btn btn-primary support-pay" id="payBtn" href="${upiLink('')}">Pay with UPI app</a>` +
       `<p class="support-small">Opens Google Pay, PhonePe, Paytm or any UPI app on your phone. On a computer, scan the QR code instead.</p></div>` +
       `<div class="support-box support-qr"><h2>Scan to pay</h2>` +
-      `<img src="${esc(SUPPORT.qr)}" width="220" height="220" alt="UPI QR code for ${esc(SUPPORT.upi)}">` +
+      `<img src="/${esc(SUPPORT.qr.replace(/^\/+/, ''))}" width="220" height="220" alt="UPI QR code for ${esc(SUPPORT.upi)}">` +
       `<div class="upi-id"><code>${esc(SUPPORT.upi)}</code><button type="button" class="btn" id="copyUpi">Copy UPI ID</button></div>` +
       `<p class="support-small">Scan with any UPI app and enter any amount.</p></div></div>` +
       `<div class="support-box support-other"><h2>Other ways to help</h2><ul>` +
@@ -388,7 +464,7 @@
       `<p class="support-thanks">${SUPPORT_BLESSING}</p>` +
       `<p class="support-fine">Payments go directly to the UPI ID above. Contributions are voluntary, give no extra access, and are not refundable or tax-deductible. Thank you! 💜</p>` +
       `</div>${footerHtml()}`;
-    setView('support', null, html, 'Support');
+    setView('support', null, html, 'Support', `Support ${SITE.name} with any amount via UPI — no minimum.`);
     window.scrollTo({ top: 0, behavior: 'instant' });
 
     const pay = $('#payBtn'), input = $('#amountInput'), chips = $$('.amount-chip');
@@ -443,7 +519,7 @@
     note.innerHTML = `<div class="si-ornament" aria-hidden="true"><span></span>🪔<span></span></div>` +
       `<p class="si-blessing">${SUPPORT_BLESSING}</p>` +
       `<p class="si-line">${esc(SUPPORT_ONE_LINERS[chapterIdx % SUPPORT_ONE_LINERS.length])}</p>` +
-      `<a class="si-btn" href="#/support">💜 Support DevNotes</a>`;
+      `<a class="si-btn" href="/support/">💜 Support DevNotes</a>`;
     mid.after(note);
   }
 
@@ -455,7 +531,7 @@
     const [title, body] = readCount >= 3 && chapterIdx % 2 === 0
       ? [`Wah! ${readCount} chapters ho gaye 🌱`, 'Yeh asli mehnat hai — proud of you! If DevNotes has been part of your journey, help keep it free for the next learner — any amount, no minimum.']
       : SUPPORT_CARD_LINES[chapterIdx % SUPPORT_CARD_LINES.length];
-    return `<aside class="support-card"><div><b>${esc(title)}</b><span>${esc(body)}</span></div><a class="btn" href="#/support">💜 Support</a></aside>`;
+    return `<aside class="support-card"><div><b>${esc(title)}</b><span>${esc(body)}</span></div><a class="btn" href="/support/">💜 Support</a></aside>`;
   }
 
   // Shown once per topic, the moment the reader finishes its last chapter.
@@ -468,7 +544,7 @@
       `<div class="support-emoji" aria-hidden="true">🎉</div><h2 id="supportTitle">You finished ${esc(topic.name)}!</h2>` +
       `<p>Saare ${topic.chapters.length} chapters! Yeh asli mehnat hai — aapke ghar wale bhi proud honge. 🙌</p>` +
       `<p>Agar in notes ne aapki madad ki, toh thoda sa aage badhayein? ₹10, ₹50, jo bhi dil kare — taaki kisi aur student ko bhi yeh free mile, jaise aapko mila.</p>` +
-      `<div class="support-actions"><a class="btn btn-primary" href="#/support">💜 Guru dakshina dein</a><button type="button" class="btn" data-close>Baad mein</button></div>` +
+      `<div class="support-actions"><a class="btn btn-primary" href="/support/">💜 Guru dakshina dein</a><button type="button" class="btn" data-close>Baad mein</button></div>` +
       `<p class="support-small">Jo bhi ho — bahut bahut badhai, aur aage ke liye all the best! 🎉</p></div>`;
     const close = () => { wrap.remove(); removeEventListener('keydown', onKey); };
     const onKey = (e) => { if (e.key === 'Escape') close(); };
@@ -490,25 +566,25 @@
     store.set('last', key);
 
     const navCard = (c, dir) => c
-      ? `<a class="footer-nav ${dir}" href="#/${chapterKey(track, topic, c)}"><small>${dir === 'prev' ? '← Previous' : 'Next →'}</small><b>${esc(c.title)}</b></a>`
+      ? `<a class="footer-nav ${dir}" href="${u(chapterKey(track, topic, c))}"><small>${dir === 'prev' ? '← Previous' : 'Next →'}</small><b>${esc(c.title)}</b></a>`
       : `<span class="footer-nav ${dir} disabled"><small>${dir === 'prev' ? 'Start' : 'End'}</small><b>${dir === 'prev' ? 'First chapter' : esc(topic.name) + ' complete'}</b></span>`;
 
     const html = `<div class="reader"><article class="reader-main">` +
-      `<nav class="breadcrumb" aria-label="Breadcrumb"><a href="#/${track.id}">${esc(track.name)}</a><span class="sep">/</span><a href="#/${track.id}/${topic.id}">${esc(topic.name)}</a><span class="sep">/</span><b>${esc(chapter.title)}</b></nav>` +
+      `<nav class="breadcrumb" aria-label="Breadcrumb"><a href="${u(track.id)}">${esc(track.name)}</a><span class="sep">/</span><a href="${u(track.id + "/" + topic.id)}">${esc(topic.name)}</a><span class="sep">/</span><b>${esc(chapter.title)}</b></nav>` +
       `<header class="reader-head"><div><div class="eyebrow">${esc(topic.name)} · Chapter ${pad(idx + 1)}</div><h1>${esc(chapter.title)}</h1><p class="subtitle">${esc(chapter.subtitle)}</p>` +
       `<div class="meta"><span>◷ ${chapter.readMin} min read</span><span>§ ${chapter.sections} sections</span><span>? ${chapter.questions} interview questions</span><span>{ } ${chapter.examples} code examples</span></div></div>` +
       `<button class="complete-btn${done ? ' done' : ''}" id="completeBtn" type="button" aria-pressed="${done}">${done ? '✓ Completed' : '○ Mark as read'}</button></header>` +
       `<div class="tabs-bar"><div class="tabs" role="tablist">${TABS.map((t) => `<button class="tab${t.id === 'all' ? ' active' : ''}" role="tab" type="button" data-filter="${t.id}" aria-selected="${t.id === 'all'}">${t.label}<span class="count" data-count="${t.id}"></span></button>`).join('')}</div>` +
       `<button class="practice-btn" id="practiceBtn" type="button" aria-pressed="false" title="Hide answers to test yourself">🎯 <span class="lbl">Practice mode</span></button></div>` +
       `<details class="mobile-toc"><summary>On this page</summary><nav id="mobileToc"></nav></details>` +
-      `<div class="content" id="content"><div class="skeleton" style="width:40%;height:26px"></div><div class="skeleton"></div><div class="skeleton" style="width:85%"></div><div class="skeleton" style="width:70%"></div></div>` +
+      `<div class="content" id="content">${PRE && PRE.route === key && PRE.content ? PRE.content : '<div class="skeleton" style="width:40%;height:26px"></div><div class="skeleton"></div><div class="skeleton" style="width:85%"></div><div class="skeleton" style="width:70%"></div>'}</div>` +
       supportCardHtml(idx) +
       `<nav class="chapter-footer" aria-label="Chapter navigation">${navCard(prev, 'prev')}${navCard(next, 'next')}</nav></article>` +
       `<aside class="rail" aria-label="On this page"><div class="rail-inner"><div class="rail-card"><div class="rail-title">On this page</div><nav id="tocLinks"></nav></div>` +
-      (next ? `<div class="rail-card"><div class="rail-title">Study this next</div><a class="next-link" href="#/${chapterKey(track, topic, next)}">${esc(next.title)} →</a></div>` : '') +
+      (next ? `<div class="rail-card"><div class="rail-title">Study this next</div><a class="next-link" href="${u(chapterKey(track, topic, next))}">${esc(next.title)} →</a></div>` : '') +
       `<div class="rail-card tip-card"><b>Interview tip</b><p>Answer in layers: definition → internal working → example → edge case → where you used it in production.</p></div></div></aside></div>${footerHtml()}`;
 
-    setView('chapter', key, html, chapter.title);
+    setView('chapter', key, html, chapter.title, chapter.subtitle);
     window.scrollTo({ top: 0, behavior: 'instant' });
 
     $('#completeBtn').addEventListener('click', (e) => {
@@ -525,7 +601,7 @@
       if (current.key !== key) return;
       $('#content').innerHTML = data.html;
       insertMidChapterNote(idx);
-      const tocHtml = data.toc.map((s, i) => `<a class="toc-link" href="#/${key}?s=${s.id}" data-id="${s.id}">${i + 1}. ${esc(s.title)}${s.kind === 'interview' ? '<span class="k">Q&amp;A</span>' : ''}</a>`).join('');
+      const tocHtml = data.toc.map((s, i) => `<a class="toc-link" href="${u(key)}#${s.id}" data-id="${s.id}">${i + 1}. ${esc(s.title)}${s.kind === 'interview' ? '<span class="k">Q&amp;A</span>' : ''}</a>`).join('');
       $('#tocLinks').innerHTML = tocHtml;
       $('#mobileToc').innerHTML = tocHtml;
       const counts = { code: chapter.examples, interview: chapter.questions };
@@ -577,8 +653,8 @@
       const anchor = e.target.closest('.anchor');
       if (anchor) {
         e.preventDefault();
-        const url = `${location.href.split('#')[0]}#/${key}?s=${anchor.dataset.sec}`;
-        history.replaceState(null, '', `#/${key}?s=${anchor.dataset.sec}`);
+        const url = `${location.origin}${u(key)}#${anchor.dataset.sec}`;
+        history.replaceState(null, '', `${u(key)}#${anchor.dataset.sec}`);
         copyText(url).then(() => toast('Link to section copied'));
         scrollToSection(anchor.dataset.sec, true);
       }
@@ -626,7 +702,7 @@
   let searchReady = null;
   let selected = -1;
   function ensureIndex() {
-    if (!searchReady) searchReady = window.DEVNOTES_SEARCH ? Promise.resolve() : loadScript('data/search-index.js');
+    if (!searchReady) searchReady = window.DEVNOTES_SEARCH ? Promise.resolve() : loadScript('/data/search-index.js');
     return searchReady;
   }
   function snippet(text, terms) {
@@ -663,7 +739,7 @@
     const top = hits.slice(0, 10);
     selected = top.length ? 0 : -1;
     results.innerHTML = top.length
-      ? top.map((h, i) => `<a class="sr-item${i === 0 ? ' active' : ''}" role="option" href="#/${h.doc.k}?s=${h.id}">` +
+      ? top.map((h, i) => `<a class="sr-item${i === 0 ? ' active' : ''}" role="option" href="${u(h.doc.k)}#${h.id}">` +
           `<div class="sr-path"><b>${esc(h.info.topic.name)}</b><span>›</span><span>${esc(h.doc.t)}</span></div>` +
           `<div class="sr-title">${esc(h.heading)}</div><div class="sr-snippet">${snippet(h.text, terms)}</div></a>`).join('')
       : `<div class="sr-empty">No results for “${esc(q)}”</div>`;
@@ -690,7 +766,7 @@
       items.forEach((it, i) => it.classList.toggle('active', i === selected));
       items[selected].scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'Enter') {
-      if (items[selected]) { e.preventDefault(); location.hash = items[selected].getAttribute('href'); input.value = ''; input.blur(); }
+      if (items[selected]) { e.preventDefault(); navigate(items[selected].getAttribute('href')); input.value = ''; input.blur(); }
     } else if (e.key === 'Escape') { closeSearch(); input.blur(); }
   });
   results.addEventListener('click', (e) => { if (e.target.closest('.sr-item')) { input.value = ''; input.blur(); closeSearch(); } });
@@ -735,6 +811,6 @@
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
   }
 
-  addEventListener('hashchange', route);
+  addEventListener('hashchange', () => { if (location.hash.startsWith('#/')) route(); });
   route();
 })();

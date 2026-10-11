@@ -2,6 +2,12 @@
   "site": {
     "name": "DevNotes",
     "tagline": "Deep, interview-focused tech notes: concepts, code, edge cases and quick revision.",
+    "description": "Free, deep and interview-focused backend notes for Java developers: Core Java, Collections, Java 8, multithreading, design patterns, Spring Boot and SQL — with runnable code, diagrams and interview Q&A.",
+    "url": "https://lunarai.in",
+    "contactEmail": "java.dev.thimmaraju@gmail.com",
+    "adsenseClient": "",
+    "googleSiteVerification": "",
+    "ogImage": "",
     "support": {
       "upi": "devnotes.in@ybl",
       "payee": "DevNotes",
@@ -27,7 +33,7 @@
         "java/exceptions",
         "java/reflection",
         "java/multithreading",
-        "java/design-patterns",
+        "design-patterns/essential-patterns",
         "spring/spring-boot",
         "microservices/microservices-basics"
       ]
@@ -43,7 +49,7 @@
         "java/exceptions",
         "java/reflection",
         "java/multithreading",
-        "java/design-patterns"
+        "design-patterns/essential-patterns"
       ]
     },
     {
@@ -98,12 +104,6 @@
           "name": "Multithreading",
           "description": "Java concurrency from first principles to production: thread lifecycle, race conditions, synchronized, the Java Memory Model and volatile, wait/notify, deadlocks, explicit locks, atomics and CAS, executors and ThreadPoolExecutor sizing, CompletableFuture, synchronizers, concurrent collections, ThreadLocal, Fork/Join, virtual threads and Spring @Async.",
           "status": "live"
-        },
-        {
-          "id": "design-patterns",
-          "name": "Design Patterns",
-          "description": "Ten patterns every backend developer is asked about, with runnable Java code: Factory Method, Singleton, Builder, Strategy, Observer, Proxy, Adapter, Decorator, plus the microservices patterns Circuit Breaker and Saga — when to use each, look-alikes, and where Spring uses them.",
-          "status": "live"
         }
       ]
     },
@@ -116,6 +116,19 @@
           "id": "spring-boot",
           "name": "Spring Boot",
           "description": "Spring Boot annotations and internals: stereotypes, Spring MVC request handling, request/response binding, exception handling, validation, dependency injection, bean lifecycle, AOP, security, auto-configuration, Actuator, microservices, performance and configuration properties.",
+          "status": "live"
+        }
+      ]
+    },
+    {
+      "id": "design-patterns",
+      "name": "Design Patterns",
+      "description": "Creational, structural, behavioral and microservices patterns with runnable Java code — and where Spring uses them.",
+      "topics": [
+        {
+          "id": "essential-patterns",
+          "name": "Essential Design Patterns",
+          "description": "Ten patterns every backend developer is asked about, with runnable Java code: Factory Method, Singleton, Builder, Strategy, Observer, Proxy, Adapter, Decorator, plus the microservices patterns Circuit Breaker and Saga — when to use each, look-alikes, and where Spring uses them.",
           "status": "live"
         }
       ]

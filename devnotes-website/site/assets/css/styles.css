@@ -604,3 +604,12 @@ td code { white-space: nowrap; }
   .support-inline { padding: 20px 16px 18px; margin: 32px 0; }
   .si-blessing { font-size: 19px; }
 }
+
+/* ------------------------------------------------------------ footer links + legal pages */
+.footer-links { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.site-footer a { color: var(--muted); text-decoration: none; }
+.site-footer a:hover { color: var(--primary-ink); text-decoration: underline; }
+.legal-page { max-width: 820px; }
+.legal h1 { font-size: clamp(30px, 4.5vw, 42px); letter-spacing: -.035em; margin: 0 0 6px; }
+.legal-updated { color: var(--faint); font-size: 13.5px; margin: 0 0 26px; }
+.legal .content { font-size: 16px; }

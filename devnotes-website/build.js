@@ -5,7 +5,9 @@
  *   content/catalog.json                 tracks + topics shown on the site
  *   content/<track>/<topic>/NN-slug.md   one Markdown file per chapter
  *
- * Output goes to site/data/ (catalog.js, search-index.js, one .js per chapter).
+ * Output goes to site/data/ (catalog.js, search-index.js, one .js per chapter), plus a pre-rendered
+ * index.html for every page (so search engines and AdSense see real content), sitemap.xml,
+ * robots.txt, ads.txt and 404.html. Page layout lives in templates/page.html.
  * The site/ folder is the deployable website.
  */
 'use strict';
@@ -458,6 +460,7 @@ function build() {
   fs.mkdirSync(OUT, { recursive: true });
 
   const searchIndex = [];
+  const chapterHtml = {};
   let chapterCount = 0;
 
   for (const track of catalog.tracks) {
@@ -487,6 +490,7 @@ function build() {
         fs.writeFileSync(path.join(outDir, `${slug}.js`),
           `DevNotes.register(${JSON.stringify(key)},${JSON.stringify({ html: r.html, toc: r.toc })});\n`);
         searchIndex.push({ k: key, t: chapter.title, s: r.search });
+        chapterHtml[key] = r.html;
         chapterCount++;
       }
       topic.chapters.sort((a, b) => a.order - b.order);
@@ -495,9 +499,205 @@ function build() {
   }
 
   catalog.builtAt = new Date().toISOString().slice(0, 10);
+
+  // Static pages (About, Contact, Privacy Policy, Terms) from content/pages/*.md
+  const site = catalog.site || {};
+  const vars = {
+    siteName: site.name || 'DevNotes',
+    siteUrl: siteUrl(site),
+    contactEmail: site.contactEmail || 'the email address shown on our Contact page (coming soon)',
+    chapterCount: String(chapterCount),
+  };
+  const fill = (s) => s.replace(/\{\{(\w+)\}\}/g, (m, k) => (k in vars ? vars[k] : m));
+  catalog.pages = [];
+  const pagesDir = path.join(CONTENT, 'pages');
+  const pageHtml = {};
+  if (fs.existsSync(pagesDir)) {
+    fs.mkdirSync(path.join(OUT, 'pages'), { recursive: true });
+    for (const file of fs.readdirSync(pagesDir).filter((f) => f.endsWith('.md'))) {
+      const { meta, body } = parseFrontMatter(fill(fs.readFileSync(path.join(pagesDir, file), 'utf8')));
+      const slug = file.replace(/\.md$/, '');
+      const html = renderChapter(body).html;
+      pageHtml[slug] = html;
+      catalog.pages.push({ slug, title: meta.title || slug, description: meta.description || '', order: Number(meta.order) || 99, updated: meta.updated || catalog.builtAt });
+      fs.writeFileSync(path.join(OUT, 'pages', `${slug}.js`), `DevNotes.register(${JSON.stringify('pages/' + slug)},${JSON.stringify({ html, toc: [] })});\n`);
+    }
+    catalog.pages.sort((a, b) => a.order - b.order);
+  }
+
   fs.writeFileSync(path.join(OUT, 'catalog.js'), `window.DEVNOTES_CATALOG=${JSON.stringify(catalog)};\n`);
   fs.writeFileSync(path.join(OUT, 'search-index.js'), `window.DEVNOTES_SEARCH=${JSON.stringify(searchIndex)};\n`);
   console.log(`Built ${chapterCount} chapter(s) into ${path.relative(ROOT, OUT)}`);
+
+  const pages = prerender(catalog, chapterHtml, pageHtml);
+  console.log(`Pre-rendered ${pages} HTML page(s), sitemap.xml, robots.txt${site.adsenseClient ? ', ads.txt' : ''} and 404.html`);
+  if (!site.url) console.warn('  ⚠ site.url is not set in content/catalog.json — canonical URLs and the sitemap use a placeholder.');
+  if (!site.contactEmail) console.warn('  ⚠ site.contactEmail is not set — the Contact and Privacy pages show a placeholder.');
+  if (!site.adsenseClient) console.warn('  ℹ site.adsenseClient is empty — no AdSense script or ads.txt generated yet.');
+}
+
+// ---------------------------------------------------------------- pre-rendered HTML pages (SEO / AdSense)
+
+const SITE_DIR = path.join(ROOT, 'site');
+const TEMPLATE = path.join(ROOT, 'templates', 'page.html');
+const siteUrl = (site) => (site.url || 'https://example.com').replace(/\/+$/, '');
+const href = (p) => (p ? `/${p}/` : '/');
+const pad2 = (n) => String(n).padStart(2, '0');
+
+function prerender(catalog, chapterHtml, pageHtml) {
+  const site = catalog.site || {};
+  const base = siteUrl(site);
+  const name = site.name || 'DevNotes';
+  const template = fs.readFileSync(TEMPLATE, 'utf8');
+  const liveTopics = catalog.tracks.flatMap((tr) => tr.topics.filter((tp) => tp.status === 'live' && tp.chapters.length).map((tp) => ({ track: tr, topic: tp })));
+
+  // Remove previously generated pages (only directories this script owns).
+  const owned = [...catalog.tracks.map((t) => t.id), ...catalog.pages.map((p) => p.slug), 'support'];
+  for (const d of owned) if (!['assets', 'data'].includes(d)) fs.rmSync(path.join(SITE_DIR, d), { recursive: true, force: true });
+  for (const f of ['index.html', '404.html', 'sitemap.xml', 'robots.txt', 'ads.txt']) fs.rmSync(path.join(SITE_DIR, f), { force: true });
+
+  const nav = `<a class="nav-link" href="/">Home</a>` + catalog.tracks.map((t) => `<a class="nav-link" href="${href(t.id)}">${esc(t.name)}</a>`).join('');
+  const sidebar = `<div class="side-head"><div class="side-title">Backend Notes</div><div class="side-sub">${esc(site.tagline || '')}</div></div>` +
+    catalog.tracks.map((track) => `<div class="side-label">${esc(track.name)}</div>` + track.topics.map((topic) => {
+      if (topic.status !== 'live' || !topic.chapters.length) return `<div class="side-topic is-soon"><span>${esc(topic.name)}</span><span class="chip">Soon</span></div>`;
+      return `<a class="side-topic" href="${href(`${track.id}/${topic.id}`)}"><span>${esc(topic.name)}</span><span class="chip chip-live">${topic.chapters.length}</span></a>` +
+        `<div class="side-chapters">${topic.chapters.map((c, i) => `<a class="chapter-link" href="${href(`${track.id}/${topic.id}/${c.slug}`)}"><span class="num">${pad2(i + 1)}</span><span>${esc(c.title)}</span></a>`).join('')}</div>`;
+    }).join('')).join('');
+  const footer = `<footer class="site-footer"><span>© ${new Date().getFullYear()} ${esc(name)} · Notes for learning and interview prep</span>` +
+    `<nav class="footer-links" aria-label="Site">${catalog.pages.map((p) => `<a href="${href(p.slug)}">${esc(p.title)}</a>`).join('')}${site.support ? '<a href="/support/">Support</a>' : ''}</nav>` +
+    `<span>Updated ${esc(catalog.builtAt)}</span></footer>`;
+
+  const headExtra = [];
+  if (site.googleSiteVerification) headExtra.push(`  <meta name="google-site-verification" content="${esc(site.googleSiteVerification)}">`);
+  if (site.adsenseClient) {
+    headExtra.push(`  <meta name="google-adsense-account" content="${esc(site.adsenseClient)}">`);
+    headExtra.push(`  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(site.adsenseClient)}" crossorigin="anonymous"></script>`);
+  }
+  const ogImage = site.ogImage
+    ? `  <meta property="og:image" content="${esc(/^https?:/.test(site.ogImage) ? site.ogImage : base + '/' + site.ogImage.replace(/^\/+/, ''))}">\n  <meta name="twitter:card" content="summary_large_image">`
+    : '  <meta name="twitter:card" content="summary">';
+
+  const sitemap = [];
+  let count = 0;
+  function write(route, { title, description, main, ogType = 'website', jsonLd = null, index = true, file = null }) {
+    const url = base + href(route);
+    const html = template
+      .replace(/\{\{title\}\}/g, esc(title))
+      .replace(/\{\{description\}\}/g, esc(description || site.tagline || ''))
+      .replace(/\{\{robots\}\}/g, index ? 'index, follow' : 'noindex, follow')
+      .replace(/\{\{canonical\}\}/g, esc(url))
+      .replace(/\{\{siteName\}\}/g, esc(name))
+      .replace(/\{\{ogType\}\}/g, ogType)
+      .replace('{{ogImage}}', ogImage)
+      .replace('{{headExtra}}', headExtra.concat(jsonLd ? [`  <script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`] : []).join('\n'))
+      .replace('{{nav}}', nav)
+      .replace('{{sidebar}}', sidebar)
+      .replace('{{route}}', esc(route))
+      .replace('{{main}}', main);
+    const out = file ? path.join(SITE_DIR, file) : path.join(SITE_DIR, ...route.split('/').filter(Boolean), 'index.html');
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, html);
+    if (index && !file) sitemap.push(url);
+    count++;
+  }
+  const crumbs = (items) => ({ '@type': 'BreadcrumbList', itemListElement: items.map(([n, r], i) => ({ '@type': 'ListItem', position: i + 1, name: n, item: base + href(r) })) });
+  const chapterCardHtml = (track, topic, c, i) => `<a class="chapter-card" href="${href(`${track.id}/${topic.id}/${c.slug}`)}">` +
+    `<div class="card-num"><span>CHAPTER ${pad2(i + 1)}</span></div><h3>${esc(c.title)}</h3><p>${esc(c.subtitle)}</p>` +
+    `<div class="card-foot"><span>${c.readMin} min · ${c.questions} Q&amp;A · ${c.examples} examples</span><span class="arrow" aria-hidden="true">→</span></div></a>`;
+
+  // Home
+  const homeTitle = `${name} — ${site.tagline || 'Tech notes'}`;
+  write('', {
+    title: homeTitle,
+    description: site.description || site.tagline,
+    jsonLd: { '@context': 'https://schema.org', '@type': 'WebSite', name, url: base + '/', description: site.description || site.tagline },
+    main: `<div class="page"><section class="hero"><div class="eyebrow">${esc(name)}</div><h1>Master modern backend technologies</h1>` +
+      `<p>${esc(site.description || site.tagline || '')}</p></section>` +
+      catalog.tracks.map((tr) => `<section><h2><a href="${href(tr.id)}">${esc(tr.name)}</a></h2><p>${esc(tr.description || '')}</p><ul>` +
+        tr.topics.map((tp) => `<li><a href="${href(`${tr.id}/${tp.id}`)}">${esc(tp.name)}</a>${tp.status === 'live' && tp.chapters.length ? ` — ${tp.chapters.length} chapters` : ' — coming soon'}</li>`).join('') + '</ul></section>').join('') +
+      `</div>${footer}`,
+  });
+
+  for (const track of catalog.tracks) {
+    write(track.id, {
+      title: `${track.name} · ${name}`,
+      description: track.description,
+      index: track.topics.some((tp) => tp.status === 'live' && tp.chapters.length),   // no thin "coming soon" pages in Google
+      jsonLd: { '@context': 'https://schema.org', ...crumbs([['Home', ''], [track.name, track.id]]) },
+      main: `<div class="page"><section class="hero"><div class="eyebrow">Track</div><h1>${esc(track.name)}</h1><p>${esc(track.description || '')}</p></section>` +
+        `<div class="chapter-grid">${track.topics.map((tp) => `<a class="chapter-card" href="${href(`${track.id}/${tp.id}`)}"><h3>${esc(tp.name)}</h3><p>${esc(tp.description || '')}</p></a>`).join('')}</div></div>${footer}`,
+    });
+    for (const topic of track.topics) {
+      const live = topic.status === 'live' && topic.chapters.length;
+      write(`${track.id}/${topic.id}`, {
+        title: `${topic.name} · ${name}`,
+        description: topic.description,
+        index: !!live,
+        jsonLd: { '@context': 'https://schema.org', ...crumbs([['Home', ''], [track.name, track.id], [topic.name, `${track.id}/${topic.id}`]]) },
+        main: `<div class="page"><section class="hero"><div class="eyebrow">${esc(track.name)}${live ? ` · ${topic.chapters.length} chapters` : ''}</div><h1>${esc(topic.name)}</h1><p>${esc(topic.description || '')}</p></section>` +
+          (live ? `<div class="chapter-grid">${topic.chapters.map((c, i) => chapterCardHtml(track, topic, c, i)).join('')}</div>` : '<p>This topic is coming soon.</p>') + `</div>${footer}`,
+      });
+      topic.chapters.forEach((c, i) => {
+        const key = `${track.id}/${topic.id}/${c.slug}`;
+        const prev = topic.chapters[i - 1], next = topic.chapters[i + 1];
+        const navCard = (ch, dir) => ch ? `<a class="footer-nav ${dir}" href="${href(`${track.id}/${topic.id}/${ch.slug}`)}"><small>${dir === 'prev' ? '← Previous' : 'Next →'}</small><b>${esc(ch.title)}</b></a>` : '';
+        write(key, {
+          title: `${c.title} · ${topic.name} · ${name}`,
+          description: c.subtitle,
+          ogType: 'article',
+          jsonLd: {
+            '@context': 'https://schema.org',
+            '@graph': [
+              { '@type': 'TechArticle', headline: c.title, description: c.subtitle, dateModified: catalog.builtAt, inLanguage: 'en', url: base + href(key),
+                author: { '@type': 'Organization', name }, publisher: { '@type': 'Organization', name }, isPartOf: { '@type': 'Course', name: topic.name } },
+              crumbs([['Home', ''], [track.name, track.id], [topic.name, `${track.id}/${topic.id}`], [c.title, key]]),
+            ],
+          },
+          main: `<div class="reader"><article class="reader-main">` +
+            `<nav class="breadcrumb" aria-label="Breadcrumb"><a href="${href(track.id)}">${esc(track.name)}</a><span class="sep">/</span><a href="${href(`${track.id}/${topic.id}`)}">${esc(topic.name)}</a><span class="sep">/</span><b>${esc(c.title)}</b></nav>` +
+            `<header class="reader-head"><div><div class="eyebrow">${esc(topic.name)} · Chapter ${pad2(i + 1)}</div><h1>${esc(c.title)}</h1><p class="subtitle">${esc(c.subtitle)}</p>` +
+            `<div class="meta"><span>◷ ${c.readMin} min read</span><span>§ ${c.sections} sections</span><span>? ${c.questions} interview questions</span><span>{ } ${c.examples} code examples</span></div></div></header>` +
+            `<div class="content" id="content">${chapterHtml[key]}</div>` +
+            `<nav class="chapter-footer" aria-label="Chapter navigation">${navCard(prev, 'prev')}${navCard(next, 'next')}</nav></article></div>${footer}`,
+        });
+      });
+    }
+  }
+
+  for (const p of catalog.pages) {
+    write(p.slug, {
+      title: `${p.title} · ${name}`,
+      description: p.description,
+      main: `<div class="page legal-page"><article class="legal"><h1>${esc(p.title)}</h1><p class="legal-updated">Last updated: ${esc(p.updated)}</p>` +
+        `<div class="content" id="content">${pageHtml[p.slug]}</div></article></div>${footer}`,
+    });
+  }
+
+  if (site.support) {
+    write('support', {
+      title: `Support · ${name}`,
+      description: `Support ${name} with any amount via UPI — no minimum.`,
+      main: `<div class="page support-page"><section class="support-hero"><div class="eyebrow">Support ${esc(name)}</div><h1>Help keep learning free for the next person</h1>` +
+        `<p>${esc(name)} has no paywalls and no sign-ups. If the notes have helped you, you can contribute any amount by UPI to <b>${esc(site.support.upi)}</b>.</p></section></div>${footer}`,
+    });
+  }
+
+  write('404', {
+    file: '404.html',
+    title: `Page not found · ${name}`,
+    description: 'This page does not exist.',
+    index: false,
+    main: `<div class="page"><div class="empty-state"><div class="eyebrow">404</div><h1>Page not found</h1><p>That note doesn't exist (yet). Try search, or head back home.</p><a class="btn btn-primary" href="/">Go home</a></div></div>${footer}`,
+  });
+
+  fs.writeFileSync(path.join(SITE_DIR, 'sitemap.xml'),
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+    sitemap.map((loc) => `  <url><loc>${esc(loc)}</loc><lastmod>${catalog.builtAt}</lastmod></url>`).join('\n') + `\n</urlset>\n`);
+  fs.writeFileSync(path.join(SITE_DIR, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${base}/sitemap.xml\n`);
+  if (site.adsenseClient) {
+    fs.writeFileSync(path.join(SITE_DIR, 'ads.txt'), `google.com, ${site.adsenseClient.replace(/^ca-/, '')}, DIRECT, f08c47fec0942fa0\n`);
+  }
+  return count;
 }
 
 build();
