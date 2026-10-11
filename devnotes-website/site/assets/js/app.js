@@ -89,6 +89,7 @@
     }
     cleanup.forEach((fn) => fn()); cleanup = [];
     setProgressBar(0);
+    if (parts.length === 1 && parts[0] === 'support' && SUPPORT) return renderSupport();
     if (parts.length === 2) return renderTopic(parts[0], parts[1]);
     if (parts.length === 1) return renderTrack(parts[0]);
     return renderHome();
@@ -103,7 +104,15 @@
     renderSidebar();
   }
 
-  const footerHtml = () => `<footer class="site-footer"><span>${esc(SITE.name)} · Notes for learning and interview prep</span><span>Updated ${esc(CATALOG.builtAt || '')}</span></footer>`;
+  const SUPPORT = SITE.support && SITE.support.upi ? SITE.support : null;
+  // UPI deep link; no amount means the payer types any amount in their app.
+  function upiLink(amount) {
+    const q = [`pa=${SUPPORT.upi}`, `pn=${encodeURIComponent(SUPPORT.payee || SITE.name)}`, 'cu=INR', `tn=${encodeURIComponent(SUPPORT.note || 'Support ' + SITE.name)}`];
+    if (amount) q.push(`am=${amount}`);
+    return `upi://pay?${q.join('&')}`;
+  }
+
+  const footerHtml = () => `<footer class="site-footer"><span>${esc(SITE.name)} · Notes for learning and interview prep${SUPPORT ? ` · <a href="#/support">Support ${esc(SITE.name)}</a>` : ''}</span><span>Updated ${esc(CATALOG.builtAt || '')}</span></footer>`;
 
   // ------------------------------------------------------------ top nav + sidebar
   function activeIds() {
@@ -277,6 +286,8 @@
       stat('si-violet', 'concept', `${concepts}+`, 'Concepts') +
       stat('si-pink', 'code', `${ex}+`, 'Code examples') +
       stat('si-green', 'question', `${qs}+`, 'Interview questions') + `</div>`;
+    html += `<div class="section-head" id="allTracks"><div><h2>All tracks</h2><p>More topics are on the way. Each one follows the same deep-notes format.</p></div></div>` +
+      `<div class="track-grid">${CATALOG.tracks.map(trackCard).join('')}</div>`;
     if ((CATALOG.paths || []).length) {
       html += `<div class="section-head"><div><h2>Featured Learning Paths</h2><p>Follow structured paths to master each technology from basics to advanced.</p></div>` +
         `<a class="link-more" href="#" id="viewAllPaths">View all tracks ${icon('arrow', 16)}</a></div>` +
@@ -289,8 +300,7 @@
         `<a class="btn" href="#/${track.id}/${topic.id}">All ${topic.chapters.length} chapters${p.done ? ` · ${p.done} read` : ''} →</a></div>` +
         `<div class="chapter-grid">${preview.map((c, i) => chapterCard(track, topic, c, i)).join('')}</div>`;
     }
-    html += `<div class="section-head" id="allTracks"><div><h2>All tracks</h2><p>More topics are on the way. Each one follows the same deep-notes format.</p></div></div>` +
-      `<div class="track-grid">${CATALOG.tracks.map(trackCard).join('')}</div></div>${footerHtml()}`;
+    html += `</div>${footerHtml()}`;
     setView('home', null, html, null);
     const toTracks = (e) => { e.preventDefault(); const t = $('#allTracks'); if (t) window.scrollTo({ top: t.getBoundingClientRect().top + scrollY - 80, behavior: 'smooth' }); };
     $('#browseTopics').addEventListener('click', toTracks);
@@ -340,6 +350,103 @@
     { id: 'summary', label: 'Quick Revision' },
   ];
 
+  // ------------------------------------------------------------ support (UPI donations, any amount)
+  function renderSupport() {
+    const chapters = liveTopics().reduce((n, { topic }) => n + topic.chapters.length, 0);
+    const amounts = SUPPORT.amounts || [];
+    const readCount = readSet().size;
+    const personal = readCount >= 1
+      ? `<p class="support-personal">🌱 You’ve read <b>${readCount}</b> chapter${readCount === 1 ? '' : 's'} on ${esc(SITE.name)} so far. Every one of them was free — and with your help, they can stay that way.</p>`
+      : '';
+    const html = `<div class="page support-page"><section class="support-hero">` +
+      `<div class="eyebrow">Support ${esc(SITE.name)}</div>` +
+      `<h1>Help keep learning free for the next person</h1>` +
+      `<p>Somewhere right now, a student is cramming for their first interview, or a developer is trying to finally understand how HashMap works at 1 a.m. ` +
+      `${esc(SITE.name)} exists for them — and maybe it was there for you, too.</p>` +
+      `<p>There are no ads, no paywalls and no sign-ups — just ${chapters} chapters of notes, put together and checked over many evenings, and kept free by readers who chip in what they can. ` +
+      `If these notes have helped you, any amount — even ₹10 — makes a real difference.</p>${personal}</section>` +
+      `<div class="support-impact" aria-label="What your support does">` +
+      `<div><b>₹29</b><span>A cup of chai that keeps a late-night writing session going</span></div>` +
+      `<div><b>₹99</b><span>Helps cover hosting so the site stays fast and ad-free</span></div>` +
+      `<div><b>₹199+</b><span>Helps fund a whole new topic — like Spring Data JPA or Microservices</span></div></div>` +
+      `<div class="support-grid"><div class="support-box">` +
+      `<h2>Choose an amount</h2>` +
+      `<div class="amount-chips" role="group" aria-label="Suggested amounts">` +
+      amounts.map((a) => `<button type="button" class="amount-chip" data-amount="${a}" aria-pressed="false">₹${a}</button>`).join('') +
+      `<button type="button" class="amount-chip" data-amount="" aria-pressed="true">Any amount</button></div>` +
+      `<label class="amount-other"><span>Or enter your own (₹)</span><input id="amountInput" type="text" inputmode="decimal" placeholder="Any amount" autocomplete="off" aria-describedby="amountHint"></label>` +
+      `<p class="amount-hint" id="amountHint">No minimum. Leave it empty to type the amount in your UPI app.</p>` +
+      `<a class="btn btn-primary support-pay" id="payBtn" href="${upiLink('')}">Pay with UPI app</a>` +
+      `<p class="support-small">Opens Google Pay, PhonePe, Paytm or any UPI app on your phone. On a computer, scan the QR code instead.</p></div>` +
+      `<div class="support-box support-qr"><h2>Scan to pay</h2>` +
+      `<img src="${esc(SUPPORT.qr)}" width="220" height="220" alt="UPI QR code for ${esc(SUPPORT.upi)}">` +
+      `<div class="upi-id"><code>${esc(SUPPORT.upi)}</code><button type="button" class="btn" id="copyUpi">Copy UPI ID</button></div>` +
+      `<p class="support-small">Scan with any UPI app and enter any amount.</p></div></div>` +
+      `<div class="support-box support-other"><h2>Other ways to help</h2><ul>` +
+      `<li>Share ${esc(SITE.name)} with a friend who's preparing for interviews.</li>` +
+      `<li>Spotted a mistake or want a topic covered? Let us know.</li></ul></div>` +
+      `<p class="support-thanks">Whether you contribute or not, thank you for learning here. We hope the notes help you land that role. 💜</p>` +
+      `<p class="support-fine">Payments go directly to the UPI ID above. Contributions are voluntary, give no extra access, and are not refundable or tax-deductible. Thank you! 💜</p>` +
+      `</div>${footerHtml()}`;
+    setView('support', null, html, 'Support');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    const pay = $('#payBtn'), input = $('#amountInput'), chips = $$('.amount-chip');
+    const setAmount = (value, fromChip) => {
+      const ok = value === '' || (/^\d{1,6}(\.\d{1,2})?$/.test(value) && Number(value) > 0);
+      const amount = ok && value ? Number(value).toFixed(2) : '';   // UPI apps expect two decimals
+      const shown = amount.endsWith('.00') ? amount.slice(0, -3) : amount;
+      input.setAttribute('aria-invalid', ok ? 'false' : 'true');
+      $('#amountHint').textContent = ok ? (amount ? `You'll pay ₹${shown}. You can still change it in your UPI app.` : 'No minimum. Leave it empty to type the amount in your UPI app.') : 'Enter an amount like 50 or 75.50.';
+      pay.href = upiLink(amount);
+      pay.textContent = amount ? `Pay ₹${shown} with UPI app` : 'Pay with UPI app';
+      chips.forEach((c) => c.setAttribute('aria-pressed', String(fromChip ? c.dataset.amount === value : value === '' && c.dataset.amount === '')));
+    };
+    chips.forEach((c) => c.addEventListener('click', () => { input.value = c.dataset.amount; setAmount(c.dataset.amount, true); }));
+    input.addEventListener('input', () => setAmount(input.value.trim(), false));
+    $('#copyUpi').addEventListener('click', () => copyText(SUPPORT.upi).then(() => toast('UPI ID copied')));
+    // We can't see whether the payment went through, so the thank-you is for the intention.
+    pay.addEventListener('click', () => setTimeout(() => toast('Thank you for supporting DevNotes 💜'), 400));
+  }
+
+  // Rotating, honest end-of-chapter messages. The variant is picked per chapter so it stays stable on revisits.
+  const SUPPORT_CARD_LINES = [
+    ['Did this chapter make something click?', 'That moment is why these notes exist. If you’d like to keep them free for the next person, any amount helps — even ₹10.'],
+    ['Preparing for an interview?', 'We’re rooting for you. If these notes saved you a few hours, a small contribution keeps them free, ad-free and growing.'],
+    ['Somewhere, someone is learning this tonight.', 'Your support — whatever you can spare — helps keep it free for them too.'],
+    ['No paywall. No ads. No sign-up.', 'Just notes, kept free by readers who chip in what they can. If that’s you, thank you 💜'],
+    ['Learning is better when it’s shared.', 'If DevNotes has helped you, you can pay it forward with any amount. It all goes into new topics.'],
+  ];
+
+  function supportCardHtml(chapterIdx) {
+    if (!SUPPORT) return '';
+    const readCount = readSet().size;
+    const [title, body] = readCount >= 3 && chapterIdx % 2 === 0
+      ? [`You’ve read ${readCount} chapters here 🌱`, 'That’s real progress. If DevNotes has been part of your journey, you can help keep it free for the next learner — any amount, no minimum.']
+      : SUPPORT_CARD_LINES[chapterIdx % SUPPORT_CARD_LINES.length];
+    return `<aside class="support-card"><div><b>${esc(title)}</b><span>${esc(body)}</span></div><a class="btn" href="#/support">💜 Support</a></aside>`;
+  }
+
+  // Shown once per topic, the moment the reader finishes its last chapter.
+  function maybeAskForSupport(topic) {
+    if (!SUPPORT || store.get('supportAsked:' + topic.id, false)) return;
+    store.set('supportAsked:' + topic.id, true);
+    const wrap = document.createElement('div');
+    wrap.className = 'support-modal';
+    wrap.innerHTML = `<div class="support-dialog" role="dialog" aria-modal="true" aria-labelledby="supportTitle">` +
+      `<div class="support-emoji" aria-hidden="true">🎉</div><h2 id="supportTitle">You finished ${esc(topic.name)}!</h2>` +
+      `<p>All ${topic.chapters.length} chapters — that takes real commitment, and you should be proud of it.</p>` +
+      `<p>If these notes helped you get here, would you consider giving back? Whatever you can spare — ₹10, ₹50, anything — keeps ${esc(SITE.name)} free for the next person who’s just starting out, the way it was for you.</p>` +
+      `<div class="support-actions"><a class="btn btn-primary" href="#/support">💜 Pay it forward</a><button type="button" class="btn" data-close>Maybe later</button></div>` +
+      `<p class="support-small">Either way — congratulations, and good luck with what’s next.</p></div>`;
+    const close = () => { wrap.remove(); removeEventListener('keydown', onKey); };
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    wrap.addEventListener('click', (e) => { if (e.target === wrap || e.target.closest('[data-close]') || e.target.closest('a')) close(); });
+    addEventListener('keydown', onKey);
+    document.body.appendChild(wrap);
+    $('.support-dialog .btn-primary', wrap).focus();
+  }
+
   function renderChapter(key, section) {
     const info = lookupKey(key);
     cleanup.forEach((fn) => fn()); cleanup = [];
@@ -364,6 +471,7 @@
       `<button class="practice-btn" id="practiceBtn" type="button" aria-pressed="false" title="Hide answers to test yourself">🎯 <span class="lbl">Practice mode</span></button></div>` +
       `<details class="mobile-toc"><summary>On this page</summary><nav id="mobileToc"></nav></details>` +
       `<div class="content" id="content"><div class="skeleton" style="width:40%;height:26px"></div><div class="skeleton"></div><div class="skeleton" style="width:85%"></div><div class="skeleton" style="width:70%"></div></div>` +
+      supportCardHtml(idx) +
       `<nav class="chapter-footer" aria-label="Chapter navigation">${navCard(prev, 'prev')}${navCard(next, 'next')}</nav></article>` +
       `<aside class="rail" aria-label="On this page"><div class="rail-inner"><div class="rail-card"><div class="rail-title">On this page</div><nav id="tocLinks"></nav></div>` +
       (next ? `<div class="rail-card"><div class="rail-title">Study this next</div><a class="next-link" href="#/${chapterKey(track, topic, next)}">${esc(next.title)} →</a></div>` : '') +
@@ -379,6 +487,7 @@
       e.currentTarget.textContent = nowDone ? '✓ Completed' : '○ Mark as read';
       renderSidebar();
       if (nowDone) toast(next ? `Nice! Next up: ${next.title}` : `${topic.name} complete 🎉`);
+      if (nowDone && topicProgress(track, topic).done === topic.chapters.length) maybeAskForSupport(topic);
     });
 
     loadChapter(key).then((data) => {

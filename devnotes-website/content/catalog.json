@@ -1,7 +1,19 @@
 {
   "site": {
     "name": "DevNotes",
-    "tagline": "Deep, interview-focused tech notes: concepts, code, edge cases and quick revision."
+    "tagline": "Deep, interview-focused tech notes: concepts, code, edge cases and quick revision.",
+    "support": {
+      "upi": "devnotes.in@ybl",
+      "payee": "DevNotes",
+      "note": "Support DevNotes",
+      "amounts": [
+        29,
+        99,
+        199,
+        499
+      ],
+      "qr": "assets/img/upi-qr.svg"
+    }
   },
   "paths": [
     {
@@ -15,6 +27,7 @@
         "java/exceptions",
         "java/reflection",
         "java/multithreading",
+        "java/design-patterns",
         "spring/spring-boot",
         "microservices/microservices-basics"
       ]
@@ -29,7 +42,8 @@
         "java/java-8",
         "java/exceptions",
         "java/reflection",
-        "java/multithreading"
+        "java/multithreading",
+        "java/design-patterns"
       ]
     },
     {
@@ -82,8 +96,14 @@
         {
           "id": "multithreading",
           "name": "Multithreading",
-          "description": "Threads, executors, locks, concurrency utilities.",
-          "status": "soon"
+          "description": "Java concurrency from first principles to production: thread lifecycle, race conditions, synchronized, the Java Memory Model and volatile, wait/notify, deadlocks, explicit locks, atomics and CAS, executors and ThreadPoolExecutor sizing, CompletableFuture, synchronizers, concurrent collections, ThreadLocal, Fork/Join, virtual threads and Spring @Async.",
+          "status": "live"
+        },
+        {
+          "id": "design-patterns",
+          "name": "Design Patterns",
+          "description": "Ten patterns every backend developer is asked about, with runnable Java code: Factory Method, Singleton, Builder, Strategy, Observer, Proxy, Adapter, Decorator, plus the microservices patterns Circuit Breaker and Saga — when to use each, look-alikes, and where Spring uses them.",
+          "status": "live"
         }
       ]
     },
