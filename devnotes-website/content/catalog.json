@@ -36,6 +36,10 @@
         "java/multithreading",
         "design-patterns/essential-patterns",
         "spring/spring-boot",
+        "spring/spring-data-jpa",
+        "spring/spring-security",
+        "spring/logging",
+        "microservices/kafka",
         "microservices/microservices-basics"
       ]
     },
@@ -50,7 +54,9 @@
         "java/exceptions",
         "java/reflection",
         "java/multithreading",
-        "design-patterns/essential-patterns"
+        "design-patterns/essential-patterns",
+        "spring/spring-data-jpa",
+        "scenarios/backend-scenarios"
       ]
     },
     {
@@ -59,6 +65,7 @@
       "icon": "layers",
       "steps": [
         "database/sql",
+        "microservices/kafka",
         "microservices/microservices-basics",
         "system-design/system-design-basics"
       ]
@@ -118,6 +125,24 @@
           "name": "Spring Boot",
           "description": "Spring Boot annotations and internals: stereotypes, Spring MVC request handling, request/response binding, exception handling, validation, dependency injection, bean lifecycle, AOP, security, auto-configuration, Actuator, microservices, performance and configuration properties.",
           "status": "live"
+        },
+        {
+          "id": "spring-data-jpa",
+          "name": "Spring Data JPA & Hibernate",
+          "description": "Repositories and save() internals, derived query keywords, pagination and keyset scrolling, @Query and JPQL, native SQL, entity mapping and ID strategies, the persistence context and dirty checking, relationships and cascading, fetching and the N+1 problem, transactions, propagation and locking, projections, Specifications and auditing, inheritance and composite keys, second-level caching, HikariCP, Flyway migrations, testing with Testcontainers and advanced Hibernate features.",
+          "status": "live"
+        },
+        {
+          "id": "spring-security",
+          "name": "Spring Security & JWT",
+          "description": "Securing Spring Boot REST APIs: password hashing with PasswordEncoder and BCrypt, JWT structure and signing algorithms, a complete JWT authentication filter and Spring Security 6 configuration, JJWT 0.12, refresh tokens, logout and the security pitfalls interviewers ask about.",
+          "status": "live"
+        },
+        {
+          "id": "logging",
+          "name": "Logging (SLF4J & Log4j2)",
+          "description": "Production logging for Java and Spring Boot: SLF4J vs Logback vs Log4j2, log levels, log4j2.xml, rolling files and retention, PatternLayout, MDC request IDs, async and JSON logging, Actuator level changes and Log4Shell.",
+          "status": "live"
         }
       ]
     },
@@ -137,13 +162,19 @@
     {
       "id": "microservices",
       "name": "Microservices",
-      "description": "Service design, communication and resilience.",
+      "description": "Messaging and event-driven architecture: Apache Kafka, service communication and resilience.",
       "topics": [
+        {
+          "id": "kafka",
+          "name": "Apache Kafka Masterclass",
+          "description": "Apache Kafka for Java backend developers, from fundamentals to production: topics, partitions and offsets, KRaft and replication, producers and consumers, offsets and rebalancing, exactly-once and the outbox pattern, retention and compaction, Spring Kafka, retries and dead-letter topics, Schema Registry, Kafka Streams and Connect, performance, monitoring, security and interview scenarios.",
+          "status": "live"
+        },
         {
           "id": "microservices-basics",
           "name": "Microservices Fundamentals",
-          "description": "Patterns, service discovery, gateways, resilience.",
-          "status": "soon"
+          "description": "Building microservices with Spring Boot and Spring Cloud: decomposition and DDD, inter-service communication, service discovery, API gateway, centralized configuration, Resilience4j, data management with sagas, outbox and CQRS, OAuth2 security, observability with tracing, Docker and Kubernetes deployment, and interview scenarios.",
+          "status": "live"
         }
       ]
     },
@@ -168,8 +199,21 @@
         {
           "id": "system-design-basics",
           "name": "System Design Basics",
-          "description": "Load balancing, caching, sharding, CAP.",
-          "status": "soon"
+          "description": "System design for backend interviews and real systems: a step-by-step framework, estimation, scalability and availability, load balancing, caching and CDNs, SQL vs NoSQL, replication and sharding, CAP and consistency, queues, rate limiting, API design, and worked designs of a URL shortener and a notification system.",
+          "status": "live"
+        }
+      ]
+    },
+    {
+      "id": "scenarios",
+      "name": "Real-World Scenarios",
+      "description": "Production troubleshooting and scenario-based interview questions with full answers.",
+      "topics": [
+        {
+          "id": "backend-scenarios",
+          "name": "Java Backend Production Scenarios",
+          "description": "72 scenario-based interview questions with full answers: slow APIs and production incidents, connection pools and transactions, sagas and resilience, Kafka lag, duplicates and DLQs, idempotency and locking, OutOfMemoryError, GC, thread pools and deadlocks, Spring Boot pitfalls, JWT and authorization, replay protection and secrets management.",
+          "status": "live"
         }
       ]
     }

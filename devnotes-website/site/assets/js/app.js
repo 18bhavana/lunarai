@@ -524,8 +524,11 @@
   function insertMidChapterNote(chapterIdx) {
     if (!SUPPORT) return;
     const sections = $$('#content > .note-section');
-    if (sections.length < 4) return;
-    const mid = sections[Math.floor(sections.length / 2) - 1];
+    const cards = $$('#content details.qa');
+    // scenario chapters keep everything in one Q&A section, so fall back to the middle card
+    const mid = sections.length >= 4 ? sections[Math.floor(sections.length / 2) - 1]
+      : cards.length >= 4 ? cards[Math.floor(cards.length / 2) - 1] : null;
+    if (!mid) return;
     const note = document.createElement('aside');
     note.className = 'support-inline';
     note.setAttribute('aria-label', 'A message from DevNotes');
